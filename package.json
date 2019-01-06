@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/halbu/nrx-term/issues"
   },
-  "homepage": "https://github.com/halbu/nrx-term#readme"
+  "homepage": "https://github.com/halbu/nrx-term#readme",
+  "devDependencies": {
+    "typescript": "^3.2.2"
+  }
 }
