@@ -1,12 +1,12 @@
-import { Tile } from './tile';
+import { NRXTile } from './tile';
 
-export class Terminal {
+export class NRXTerm {
   private _x: number;
   private _y: number;
   private _w: number;
   private _h: number;
 
-  private tilemap: Array<Array<Tile>>;
+  private tilemap: Array<Array<NRXTile>>;
   private ctx: CanvasRenderingContext2D;
   private tileRedrawsThisFrame = 0;
   private fontFamily: string;
@@ -69,11 +69,11 @@ export class Terminal {
    * @returns void
    */
   private initialiseTiles(): void {
-    this.tilemap = new Array<Array<Tile>>();
+    this.tilemap = new Array<Array<NRXTile>>();
     for (let i = 0; i !== this._w; ++i) {
-      this.tilemap[i] = Array<Tile>();
+      this.tilemap[i] = Array<NRXTile>();
       for (let j = 0; j !== this._h; ++j) {
-        this.tilemap[i][j] = new Tile();
+        this.tilemap[i][j] = new NRXTile();
       }
     }
   }
@@ -124,9 +124,9 @@ export class Terminal {
    * Returns the tile object at the specified location within the terminal.
    * @param  {number} x X-position of tile to retrieve
    * @param  {number} y X-position of tile to retrieve
-   * @returns Tile Tile at the specified location. Throws an error if attempting to obtain a tile that does not exist.
+   * @returns NRXTile The tile at the specified location. Errors if attempting to obtain a tile that doesn't exist.
    */
-  public tileAt(x: number, y: number): Tile {
+  public tileAt(x: number, y: number): NRXTile {
     if (!this.withinTerminal(x, y)) {
       throw new Error('Attempted to retrieve a tile that was outside the terminal.');
     }
@@ -156,7 +156,7 @@ export class Terminal {
           tile.uncolored = true;
         }
 
-        tile.cloneGlyphState(); // Store the state of the Tile to detect changes on next redraw
+        tile.cloneGlyphState(); // Store the state of the tile to detect changes on next redraw
       }
     }
   }

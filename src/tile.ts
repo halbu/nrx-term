@@ -1,12 +1,21 @@
-export class Tile {
-  public currentGlyph: Glyph;
-  public previousGlyph: Glyph;
+// Holds a representation of what a Tile currently looks like.
+class NRXGlyph {
+  public char = '?';
+  public fgc = '#ff00ff';
+  public bgc = '#000000';
+  public bga = 1.0;
+  public rot = 0;
+}
+
+export class NRXTile {
+  public currentGlyph: NRXGlyph;
+  public previousGlyph: NRXGlyph;
   public uncolored: boolean;
   public forceRedraw = false; // Set true to force a one-off repaint of this tile upon next redraw of the terminal
 
   constructor() {
-    this.currentGlyph = new Glyph();
-    this.previousGlyph = new Glyph();
+    this.currentGlyph = new NRXGlyph();
+    this.previousGlyph = new NRXGlyph();
     this.uncolored = true;  // Is there a BG color already here that we should blend?
   }
 
@@ -41,13 +50,4 @@ export class Tile {
   public setBga(bga: number): void { this.currentGlyph.bga = bga; }
   public setChar(char: string): void { this.currentGlyph.char = char; }
   public setRot(rot: number): void { this.currentGlyph.rot = rot; }
-}
-
-// Holds a representation of what a Tile currently looks like.
-class Glyph {
-  public char = '?';
-  public fgc = '#ff00ff';
-  public bgc = '#000000';
-  public bga = 1.0;
-  public rot = 0;
 }

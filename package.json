@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "tslint -p tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,10 @@
   },
   "homepage": "https://github.com/halbu/nrx-term#readme",
   "devDependencies": {
+    "tslint": "^5.12.0",
     "typescript": "^3.2.2"
-  }
+  },
+  "files": [
+    "lib/**/*"
+  ]
 }
