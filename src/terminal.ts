@@ -146,17 +146,16 @@ export class NRXTerm {
     for (let x = 0; x !== this.w; x++) {
       for (let y = 0; y !== this.h; y++) {
         const tile = this.tileAt(x, y);
-        const glyph = tile.currentGlyph;
 
         if (tile.hasChanged() || tile.forceRedraw) {
           this.tileRedrawsThisFrame++;
-          this.paintBgColor(x, y, glyph.bgc, glyph.bga);
-          this.paintFgCharacter(x, y, (this.alwaysUppercase) ? glyph.char.toUpperCase() : glyph.char, glyph.fgc, glyph.rot);
+          this.paintBgColor(x, y, tile.bgc, tile.bga);
+          this.paintFgCharacter(x, y, (this.alwaysUppercase) ? tile.char.toUpperCase() : tile.char, tile.fgc, tile.rot);
           tile.forceRedraw = false;
           tile.uncolored = true;
         }
 
-        tile.cloneGlyphState(); // Store the state of the tile to detect changes on next redraw
+        tile.cloneTileState(); // Store the state of the tile to detect changes on next redraw
       }
     }
   }

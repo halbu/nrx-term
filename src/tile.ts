@@ -8,14 +8,14 @@ class NRXTileState {
 }
 
 export class NRXTile {
-  public currentGlyph: NRXTileState;
-  public previousGlyph: NRXTileState;
+  private _currentTileState: NRXTileState;
+  private _previousTileState: NRXTileState;
   public uncolored: boolean;
   public forceRedraw = false; // Set true to force a one-off repaint of this tile upon next redraw of the terminal
 
   constructor() {
-    this.currentGlyph = new NRXTileState();
-    this.previousGlyph = new NRXTileState();
+    this._currentTileState = new NRXTileState();
+    this._previousTileState = new NRXTileState();
     this.uncolored = true;  // Is there a BG color already here that we should blend?
   }
 
@@ -23,12 +23,12 @@ export class NRXTile {
    * Stores the state of a tile, in order that we can later test to see if it requires redrawing.
    * @returns void
    */
-  public cloneGlyphState(): void {
-    this.previousGlyph.bga = this.currentGlyph.bga;
-    this.previousGlyph.bgc = this.currentGlyph.bgc;
-    this.previousGlyph.fgc = this.currentGlyph.fgc;
-    this.previousGlyph.char = this.currentGlyph.char;
-    this.previousGlyph.rot = this.currentGlyph.rot;
+  public cloneTileState(): void {
+    this._previousTileState.bga = this._currentTileState.bga;
+    this._previousTileState.bgc = this._currentTileState.bgc;
+    this._previousTileState.fgc = this._currentTileState.fgc;
+    this._previousTileState.char = this._currentTileState.char;
+    this._previousTileState.rot = this._currentTileState.rot;
   }
 
   /**
@@ -36,18 +36,25 @@ export class NRXTile {
    * @returns boolean
    */
   public hasChanged(): boolean {
-    if (this.currentGlyph.char !== this.previousGlyph.char) { return true; }
-    if (this.currentGlyph.fgc !== this.previousGlyph.fgc) { return true; }
-    if (this.currentGlyph.bgc !== this.previousGlyph.bgc) { return true; }
-    if (this.currentGlyph.bga !== this.previousGlyph.bga) { return true; }
-    if (this.currentGlyph.rot !== this.previousGlyph.rot) { return true; }
+    if (this._currentTileState.char !== this._previousTileState.char) { return true; }
+    if (this._currentTileState.fgc !== this._previousTileState.fgc) { return true; }
+    if (this._currentTileState.bgc !== this._previousTileState.bgc) { return true; }
+    if (this._currentTileState.bga !== this._previousTileState.bga) { return true; }
+    if (this._currentTileState.rot !== this._previousTileState.rot) { return true; }
     return false;
   }
 
   // Methods that allow the display characteristics of the tile to be modified.
-  public setFgc(fgc: string): void { this.currentGlyph.fgc = fgc; }
-  public setBgc(bgc: string): void { this.currentGlyph.bgc = bgc; }
-  public setBga(bga: number): void { this.currentGlyph.bga = bga; }
-  public setChar(char: string): void { this.currentGlyph.char = char; }
-  public setRot(rot: number): void { this.currentGlyph.rot = rot; }
+  public setFgc(fgc: string): void { this._currentTileState.fgc = fgc; }
+  public setBgc(bgc: string): void { this._currentTileState.bgc = bgc; }
+  public setBga(bga: number): void { this._currentTileState.bga = bga; }
+  public setChar(char: string): void { this._currentTileState.char = char; }
+  public setRot(rot: number): void { this._currentTileState.rot = rot; }
+
+  // Methods that allow the display characteristics of the tile to be modified.
+  get fgc(): string { return this._currentTileState.fgc; }
+  get bgc(): string { return this._currentTileState.bgc; }
+  get bga(): number { return this._currentTileState.bga; }
+  get char(): string { return this._currentTileState.char; }
+  get rot(): number { return this._currentTileState.rot; }
 }
