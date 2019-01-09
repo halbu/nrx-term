@@ -216,7 +216,7 @@ export class NRXTerm {
    * Writes a string to the terminal, wrapping to a new line with the same x-position if the string runs off the right
    * edge of the terminal.
    * @param  {string} str The string to be written to the terminal. Color directives can be added within the string if
-   * there is a need for the string to be multicolored, e.g.: 'Normal text, _[FF00FF]purple text_, normal text again.'
+   * there is a need for the string to be multicolored, e.g.: 'Normal text, $[FF00FF]purple text$, normal text again.'
    * @param  {number} x X-position to begin writing the string at
    * @param  {number} y Y-position to begin writing the string at
    * @param  {string} color (Optional) The color of the text. Defaults to white
