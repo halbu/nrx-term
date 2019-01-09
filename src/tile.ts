@@ -1,5 +1,5 @@
 // Holds a representation of what a Tile currently looks like.
-class NRXGlyph {
+class NRXTileState {
   public char = '?';
   public fgc = '#ff00ff';
   public bgc = '#000000';
@@ -8,19 +8,19 @@ class NRXGlyph {
 }
 
 export class NRXTile {
-  public currentGlyph: NRXGlyph;
-  public previousGlyph: NRXGlyph;
+  public currentGlyph: NRXTileState;
+  public previousGlyph: NRXTileState;
   public uncolored: boolean;
   public forceRedraw = false; // Set true to force a one-off repaint of this tile upon next redraw of the terminal
 
   constructor() {
-    this.currentGlyph = new NRXGlyph();
-    this.previousGlyph = new NRXGlyph();
+    this.currentGlyph = new NRXTileState();
+    this.previousGlyph = new NRXTileState();
     this.uncolored = true;  // Is there a BG color already here that we should blend?
   }
 
   /**
-   * Stores the state of a Tile, in order that we can later test to see if it requires redrawing.
+   * Stores the state of a tile, in order that we can later test to see if it requires redrawing.
    * @returns void
    */
   public cloneGlyphState(): void {
@@ -44,7 +44,7 @@ export class NRXTile {
     return false;
   }
 
-  // Methods that allow the display characteristics of the Tile to be modified.
+  // Methods that allow the display characteristics of the tile to be modified.
   public setFgc(fgc: string): void { this.currentGlyph.fgc = fgc; }
   public setBgc(bgc: string): void { this.currentGlyph.bgc = bgc; }
   public setBga(bga: number): void { this.currentGlyph.bga = bga; }
