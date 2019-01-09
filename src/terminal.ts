@@ -220,24 +220,28 @@ export class NRXTerm {
    * there is a need for the string to be multicolored, e.g.: 'Normal text, _[FF00FF]purple text_, normal text again.'
    * @param  {number} x X-position to begin writing the string at
    * @param  {number} y Y-position to begin writing the string at
-   * @param  {string} color The color of the text
+   * @param  {string} color (Optional) The color of the text. Defaults to white
+   * @param  {number} width (Optional) The maximum width of a line in characters before wrapping.
    * @returns number The number of vertical lines that were used to write the complete string
    */
-  public drawString(str: string, x: number, y: number, color: string): number {
+  public drawString(str: string, x: number, y: number, color?: string, width?: number): number {
     let wordXPosition = 0;
     let yOffset = 0;
     let tokens = str.split(' ');
 
     const baseColor = color ? color : 'white';
-    let currentColor = color;
+    let currentColor = baseColor;
     let isColorSwitched = false;
 
     for (let t = 0; t !== tokens.length; ++t) {
       const token = tokens[t];
       const tokenLengthWithoutColorDirectives = this.lengthWithoutColorDirectives(token);
 
-      // Would the next token overrun the edge of the terminal in the x-direction? move down a line if so
-      if (x + wordXPosition + tokenLengthWithoutColorDirectives >= this.w) {
+      // Move down a line if the next token would overrun the right edge of the terminal, or exceed the maximum width
+      if (
+        x + wordXPosition + tokenLengthWithoutColorDirectives >= this.w ||
+        width && wordXPosition + tokenLengthWithoutColorDirectives > width
+      ) {
         yOffset++;
         wordXPosition = 0;
       }
