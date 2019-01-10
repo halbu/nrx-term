@@ -48,7 +48,7 @@ export class NRXTerm {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    this.tilemap = [[]];
+    this.tilemap = [[]]; // To make the compiler happy
     this.initialiseTiles();
 
     this.ctx.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
@@ -91,6 +91,7 @@ export class NRXTerm {
     this._y = y;
     this._w = w;
     this._h = h;
+    this.initialiseTiles();
     this.assertPositionAndDimensionsAreValid();
   }
 
