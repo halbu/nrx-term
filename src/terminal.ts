@@ -28,8 +28,8 @@ export class NRXTerm {
    * @param  {CanvasRenderingContext2D} ctx The rendering context of the canvas that the terminal will be drawn to
    * @param  {string} fontFamily The font-family that will be used to draw characters to the terminal
    * @param  {number} fontSize Font size, in points, that will be used to draw characters to the terminal
-   * @param  {number} _tileWidth The width of a terminal tile, in pixels
-   * @param  {number} _tileHeight The height of a terminal tile, in pixels
+   * @param  {number} tileWidth The width of a terminal tile, in pixels
+   * @param  {number} tileHeight The height of a terminal tile, in pixels
    */
   constructor(x: number, y: number, w: number, h: number, ctx: CanvasRenderingContext2D, fontFamily: string,
     fontSize: number, tileWidth: number, tileHeight: number)
