@@ -50,8 +50,6 @@ export class NRXTerm {
 
     this.tilemap = [[]]; // To make the compiler happy
     this.initialiseTiles();
-
-    this.ctx.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
   }
   
   // Getters/setters for private members
@@ -118,7 +116,7 @@ export class NRXTerm {
    * @returns boolean Reports whether the specified x-y location is a valid position within the bounds of the terminal
    */
   public withinTerminal(x: number, y: number): boolean {
-    return (x >= 0 && x < this.w && y >= 0 && y < this.h);
+    return x >= 0 && x < this.w && y >= 0 && y < this.h;
   }
 
   /**
