@@ -11,14 +11,15 @@ export class NRXTerm {
   private tileRedrawsThisFrame = 0;
   private fontFamily: string;
   private fontSize: number;
-  private alwaysUppercase = false;
+  
+  private _alwaysUppercase = false;
   
   private _tileWidth: number;
   private _tileHeight: number;
   private _defaultBgColor = '#000000';
 
-  private COLOR_DIRECTIVE_INDICATOR = '$';
-  private COLOR_DIRECTIVE_LENGTH = 8;
+  private readonly COLOR_DIRECTIVE_INDICATOR = '$';
+  private readonly COLOR_DIRECTIVE_LENGTH = 8;
 
   /**
    * @param  {number} x The X position of the terminal within the canvas (pixels from left edge)
@@ -60,7 +61,9 @@ export class NRXTerm {
   get tileRedraws(): number         { return this.tileRedrawsThisFrame; }
   get tileWidth(): number           { return this._tileWidth; }
   get tileHeight(): number          { return this._tileHeight; }
+
   set defaultBgColor(dbgc: string)  { this._defaultBgColor = dbgc; }
+  set alwaysUppercase(au: boolean)  { this._alwaysUppercase = au; }
   
   /**
    * Sets up the 2D array of Tiles that represent the entire terminal.
@@ -149,7 +152,7 @@ export class NRXTerm {
         if (tile.hasChanged() || tile.forceRedraw) {
           this.tileRedrawsThisFrame++;
           this.paintBgColor(x, y, tile.bgc, tile.bga);
-          this.paintFgCharacter(x, y, (this.alwaysUppercase) ? tile.char.toUpperCase() : tile.char, tile.fgc, tile.rot);
+          this.paintFgCharacter(x, y, (this._alwaysUppercase) ? tile.char.toUpperCase() : tile.char, tile.fgc, tile.rot);
           tile.forceRedraw = false;
           tile.uncolored = true;
         }
