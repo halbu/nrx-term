@@ -1,4 +1,4 @@
-// Holds a representation of what a Tile currently looks like.
+// Holds a representation of what a tile currently looks like.
 class NRXTileState {
   public char = '?';
   public fgc = '#ff00ff';
@@ -10,13 +10,13 @@ class NRXTileState {
 export class NRXTile {
   private _currentTileState: NRXTileState;
   private _previousTileState: NRXTileState;
-  public uncolored: boolean;
+  public uncolored: boolean; // Is there a BG color already here that we should blend?
   public forceRedraw = false; // Set true to force a one-off repaint of this tile upon next redraw of the terminal
 
   constructor() {
     this._currentTileState = new NRXTileState();
     this._previousTileState = new NRXTileState();
-    this.uncolored = true;  // Is there a BG color already here that we should blend?
+    this.uncolored = true;
   }
 
   /**
