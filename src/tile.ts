@@ -44,6 +44,18 @@ export class NRXTile {
     return false;
   }
 
+  private lerp(newCol: string, currentCol: string, proportion: number): string {
+    let ah = parseInt(newCol.replace(/#/g, ''), 16),
+      ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+      bh = parseInt(currentCol.replace(/#/g, ''), 16),
+      br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+      rr = ar + proportion * (br - ar),
+      rg = ag + proportion * (bg - ag),
+      rb = ab + proportion * (bb - ab);
+
+      return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+  }
+
   // Methods that allow the display characteristics of the tile to be modified.
   public setFgc(fgc: string): void { this._currentTileState.fgc = fgc; }
   public setBgc(bgc: string): void { this._currentTileState.bgc = bgc; }
