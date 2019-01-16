@@ -44,6 +44,14 @@ export class NRXTile {
     return false;
   }
 
+  public lerpBgc(newBgc: string, proportion: number): void {
+    if (proportion < 0 || proportion > 1) {
+      throw new Error ('Attempted to lerp the background color by a proportion outside the acceptable range [0, 1].');
+    }
+
+    this._currentTileState.bgc = this.lerp(newBgc, this._currentTileState.bgc, proportion);
+  }
+
   private lerp(newCol: string, currentCol: string, proportion: number): string {
     let ah = parseInt(newCol.replace(/#/g, ''), 16),
       ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
