@@ -272,8 +272,12 @@ export class NRXTerm {
             isColorSwitched = false;
           }
         } else {
-          this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(token[i]);
-          this.tileAt(x + wordXPosition + xOffset, y + yOffset).setFgc(isColorSwitched ? currentColor : baseColor);
+          const currentTile = this.tileAt(x + wordXPosition + xOffset, y + yOffset);
+
+          currentTile.setChar(token[i]);
+          currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
+          currentTile.setRot(0); // My assumption is that the user will never want to draw a string with rotated characters!
+          
           xOffset++;
         }
 
