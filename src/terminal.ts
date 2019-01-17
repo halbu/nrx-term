@@ -130,7 +130,8 @@ export class NRXTerm {
    */
   public tileAt(x: number, y: number): NRXTile {
     if (!this.withinTerminal(x, y)) {
-      throw new Error('Attempted to retrieve a tile that was outside the terminal.');
+      throw new Error('Attempted to retrieve a tile that was outside the terminal (requested co-ordinates: '
+        + x + ':' + y + ', terminal size ' + this._w + ':' + this._h + '.');
     }
 
     return this.tilemap[x][y];
