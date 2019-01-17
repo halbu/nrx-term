@@ -277,7 +277,8 @@ export class NRXTerm {
 
           currentTile.setChar(token[i]);
           currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
-          currentTile.setRot(0); // My assumption is that the user will never want to draw a string with rotated characters!
+          currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
+                                  // with characters that inherit any existing rotation on the underlying tile...
           
           xOffset++;
         }
