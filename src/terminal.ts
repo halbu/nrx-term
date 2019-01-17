@@ -114,9 +114,10 @@ export class NRXTerm {
   }
 
   /**
+   * Reports whether the specified x-y location is a valid position within the bounds of the terminal
    * @param  {number} x X-position to test
    * @param  {number} y Y-position to test
-   * @returns boolean Reports whether the specified x-y location is a valid position within the bounds of the terminal
+   * @returns {boolean} Reports whether the specified x-y location is a valid position within the bounds of the terminal
    */
   public withinTerminal(x: number, y: number): boolean {
     return x >= 0 && x < this.w && y >= 0 && y < this.h;
@@ -126,7 +127,7 @@ export class NRXTerm {
    * Returns the tile object at the specified location within the terminal.
    * @param  {number} x X-position of tile to retrieve
    * @param  {number} y X-position of tile to retrieve
-   * @returns NRXTile The tile at the specified location. Errors if attempting to obtain a tile that doesn't exist.
+   * @returns {NRXTile} The tile object at the specified location.
    */
   public tileAt(x: number, y: number): NRXTile {
     if (!this.withinTerminal(x, y)) {
@@ -140,7 +141,7 @@ export class NRXTerm {
   /**
    * Draws the complete terminal to the canvas at the specified position. Will only redraw cells that have changed
    * in some way since the last draw, unless a tile's forceRedraw flag has been set to true.
-   * @returns void
+   * @returns {void}
    */
   public drawToCanvas(): void {
     this.ctx.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
@@ -169,7 +170,7 @@ export class NRXTerm {
    * @param  {number} y Y-position of tile to paint color to
    * @param  {string} c Color (in form '#ff00ff') to paint as background color
    * @param  {number} a Alpha value of color
-   * @returns void
+   * @returns {void}
    */
   private paintBgColor(x: number, y: number, c: string, a: number): void {
     // Black out the Tile on the canvas
@@ -188,12 +189,13 @@ export class NRXTerm {
   }
 
   /**
+   * Paints a character, s, to the terminal at position x, y using color c, rotated by angle rotationAngle
    * @param  {number} x The x-position of the tile to draw the foreground character to
    * @param  {number} y The y-position of the tile to draw the foreground character to
    * @param  {string} s The character to draw
    * @param  {string} c The color to use to draw the character. Defaults to white
    * @param  {number} rotationAngle The amount of rotation (in radians) to be applied to the character
-   * @returns void
+   * @returns {void}
    */
   private paintFgCharacter(x: number, y: number, s: string, c: string, rotationAngle: number): void {
     this.ctx.fillStyle = (c === null) ? 'white' : c;
@@ -217,14 +219,14 @@ export class NRXTerm {
 
   /**
    * Writes a string to the terminal, wrapping to a new line with the same x-position if the string runs off the right
-   * edge of the terminal.
+   * edge of the terminal. Returns the number of vertical lines that were used to write the complete string
    * @param  {string} str The string to be written to the terminal. Color directives can be added within the string if
    * there is a need for the string to be multicolored, e.g.: 'Normal text, $[FF00FF]purple text$, normal text again.'
    * @param  {number} x X-position to begin writing the string at
    * @param  {number} y Y-position to begin writing the string at
    * @param  {string} color (Optional) The color of the text. Defaults to white
    * @param  {number} width (Optional) The maximum width of a line in characters before wrapping.
-   * @returns number The number of vertical lines that were used to write the complete string
+   * @returns {number}
    */
   public drawString(str: string, x: number, y: number, color?: string, width?: number): number {
     let wordXPosition = 0;
@@ -304,7 +306,7 @@ export class NRXTerm {
    * Calculates the length of a given string once all the characters that comprise parts of color directives have been
    * removed.
    * @param  {string} str The string to be written to the terminal
-   * @returns number The length, in characters, of the string with all color directive characters removed
+   * @returns {number} The length, in characters, of the string with all color directive characters removed
    */
   private lengthWithoutColorDirectives(str: string): number {
     let strlen = 0;
