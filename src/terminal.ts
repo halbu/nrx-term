@@ -241,6 +241,11 @@ export class NRXTerm {
       const token = tokens[t];
       const tokenLengthWithoutColorDirectives = this.lengthWithoutColorDirectives(token);
 
+      // If an entire word is too big to fit and would overrun the right edge of the terminal, stop
+      if ((wordXPosition === 0) && (x + tokenLengthWithoutColorDirectives >= this.w)) {
+        return -1;
+      }
+
       // Move down a line if the next token would overrun the right edge of the terminal, or exceed the maximum width
       if (
         x + wordXPosition + tokenLengthWithoutColorDirectives >= this.w ||
