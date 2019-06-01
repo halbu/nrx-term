@@ -19,6 +19,7 @@ export class NRXTerm {
   private _defaultBgColor = '#000000';
 
   private readonly COLOR_DIRECTIVE_INDICATOR = '$';
+  private readonly LINE_BREAK_INDICATOR = '^';
   private readonly COLOR_DIRECTIVE_LENGTH = 8;
 
   /**
