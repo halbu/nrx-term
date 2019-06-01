@@ -231,11 +231,15 @@ export class NRXTerm {
   public drawString(str: string, x: number, y: number, color?: string, width?: number): number {
     let wordXPosition = 0;
     let yOffset = 0;
-    let tokens = str.split(' ');
+
+    let lines = str.split(this.LINE_BREAK_INDICATOR);
 
     const baseColor = color ? color : 'white';
     let currentColor = baseColor;
     let isColorSwitched = false;
+
+    for (let l = 0; l !== lines.length; ++l) {
+      let tokens = lines[l].split(' ');
 
     for (let t = 0; t !== tokens.length; ++t) {
       const token = tokens[t];
@@ -302,6 +306,11 @@ export class NRXTerm {
       // Move the cursor horizontally by the length of the of the drawn word and reset the xOffset
       wordXPosition += tokenLengthWithoutColorDirectives;
       xOffset = 0;
+    }
+
+      // Line break
+      yOffset += 1;
+      wordXPosition = 0;
     }
 
     return yOffset;
