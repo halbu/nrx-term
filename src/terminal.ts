@@ -291,7 +291,7 @@ export class NRXTerm {
         }
 
         // If there's room at the edge of the terminal after the word, draw a space
-        if (i === token.length - 1) {
+        if (i === token.length - 1 && t !== tokens.length - 1) {
           if (this.tileAt(x + wordXPosition + xOffset, y + yOffset)) {
             this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
             wordXPosition++;
