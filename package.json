@@ -25,6 +25,5 @@
   },
   "files": [
     "lib/**/*"
-  ],
-  "private": true
+  ]
 }
