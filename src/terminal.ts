@@ -218,6 +218,26 @@ export class NRXTerm {
   }
 
   /**
+   * Blanks a rectangular section of the terminal (setting all foreground characters within this rectangle to an empty
+   * string) and sets the background color of all tiles within the rectangle to the specified color c
+   * @param  {number} x X-position of the top-left point of the rectangle to fill
+   * @param  {number} y Y-position of the top-left point of the rectangle to fill
+   * @param  {number} w Width in cells of the rectangle to fill
+   * @param  {number} h Height in cells of the rectangle to fill
+   * @param  {string} c Color in hex to use to fill the rectangle. Defaults to black
+   * @returns void
+   */
+  public fillRect(x: number, y: number, w: number, h: number, c: string): void {
+    for (let i = 0; i !== w; ++i) {
+      for (let j = 0; j !== h; ++j) {
+        const currentTile = this.tileAt(i + x, j + y);
+        currentTile.setBgc((c === null) ? '#000000' : c);
+        currentTile.setChar(' ');
+      }
+    }
+  }
+
+  /**
    * Writes a string to the terminal, wrapping to a new line with the same x-position if the string runs off the right
    * edge of the terminal. Returns the number of vertical lines that were used to write the complete string
    * @param  {string} str The string to be written to the terminal. Color directives can be added within the string if
