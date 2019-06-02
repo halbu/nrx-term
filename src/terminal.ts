@@ -34,8 +34,7 @@ export class NRXTerm {
    * @param  {number} tileHeight The height of a terminal tile, in pixels
    */
   constructor(x: number, y: number, w: number, h: number, ctx: CanvasRenderingContext2D, fontFamily: string,
-    fontSize: number, tileWidth: number, tileHeight: number)
-  {
+    fontSize: number, tileWidth: number, tileHeight: number) {
     this.ctx = ctx;
     this.fontSize = fontSize;
     this.fontFamily = fontFamily;
