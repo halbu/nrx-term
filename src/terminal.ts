@@ -331,8 +331,10 @@ export class NRXTerm {
 
             // If this is not the last word of this line, and we have sufficient room to do so, add a space
             if (i === word.length - 1 && w !== line.length - 1) {
-              this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
-              wordXPosition++;
+              if (this.withinTerminal(x + wordXPosition + xOffset, y + yOffset)) {
+                this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
+                wordXPosition++;
+              }
             }
           }
 
