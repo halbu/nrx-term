@@ -200,20 +200,17 @@ export class NRXTerm {
   private paintFgCharacter(x: number, y: number, s: string, c: string, rotationAngle: number): void {
     this.ctx.fillStyle = (c === null) ? 'white' : c;
 
+    const cx = this.x + x * this._tileWidth + this._tileWidth / 2;
+    const cy = this.y + y * this._tileHeight + this._tileHeight / 2;
+
     if (rotationAngle && rotationAngle !== 0) {
       this.ctx.save();
-      this.ctx.translate(
-        this.x + x * this._tileWidth + this._tileWidth / 2,
-        this.y + y * this._tileHeight + this._tileHeight / 2
-      );
+      this.ctx.translate(cx, cy);
       this.ctx.rotate(rotationAngle);
       this.ctx.fillText(s, 0, 0);
       this.ctx.restore();
     } else {
-      this.ctx.fillText(s,
-        this.x + x * this._tileWidth + this._tileWidth / 2,
-        this.y + y * this._tileHeight + this._tileHeight / 2
-      );
+      this.ctx.fillText(s, cx, cy);
     }
   }
 
