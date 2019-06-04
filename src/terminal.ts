@@ -11,9 +11,9 @@ export class NRXTerm {
   private tileRedrawsThisFrame = 0;
   private fontFamily: string;
   private fontSize: number;
-  
+
   private _alwaysUppercase = false;
-  
+
   private _tileWidth: number;
   private _tileHeight: number;
   private _defaultBgColor = '#000000';
@@ -52,19 +52,19 @@ export class NRXTerm {
     this.tilemap = [[]]; // To make the compiler happy
     this.initialiseTiles();
   }
-  
-  // Getters/setters for private members
-  get x(): number                   { return this._x; }
-  get y(): number                   { return this._y; }
-  get w(): number                   { return this._w; }
-  get h(): number                   { return this._h; }
-  get tileRedraws(): number         { return this.tileRedrawsThisFrame; }
-  get tileWidth(): number           { return this._tileWidth; }
-  get tileHeight(): number          { return this._tileHeight; }
 
-  set defaultBgColor(dbgc: string)  { this._defaultBgColor = dbgc; }
-  set alwaysUppercase(au: boolean)  { this._alwaysUppercase = au; }
-  
+  // Getters/setters for private members
+  get x(): number { return this._x; }
+  get y(): number { return this._y; }
+  get w(): number { return this._w; }
+  get h(): number { return this._h; }
+  get tileRedraws(): number { return this.tileRedrawsThisFrame; }
+  get tileWidth(): number { return this._tileWidth; }
+  get tileHeight(): number { return this._tileHeight; }
+
+  set defaultBgColor(dbgc: string) { this._defaultBgColor = dbgc; }
+  set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
+
   /**
    * Sets up the 2D array of Tiles that represent the entire terminal.
    * @returns void
@@ -78,7 +78,7 @@ export class NRXTerm {
       }
     }
   }
-  
+
   /**
    * Resizes and repositions the terminal within the canvas.
    * @param  {number} x The X position of the terminal within the canvas (pixels from left edge)
@@ -235,102 +235,107 @@ export class NRXTerm {
   }
 
   /**
-   * Writes a string to the terminal, wrapping to a new line with the same x-position if the string runs off the right
-   * edge of the terminal. Returns the number of vertical lines that were used to write the complete string
+   * Writes a string to the terminal, wrapping to a new line with the same x-position if the string exceeds the length
+   * of the optional width parameter. Strings may be written partially or entirely outside the bounds of the terminal,
+   * with any characters of the string which fall outside the bounds of the terminal not being rendered.
+   * Returns the number of vertical lines that were used to write the complete string.
    * @param  {string} str The string to be written to the terminal. Color directives can be added within the string if
    * there is a need for the string to be multicolored, e.g.: 'Normal text, $[FF00FF]purple text$, normal text again.'
    * @param  {number} x X-position to begin writing the string at
    * @param  {number} y Y-position to begin writing the string at
    * @param  {string} color (Optional) The color of the text. Defaults to white
    * @param  {number} width (Optional) The maximum width of a line in characters before wrapping.
+   * @param  {boolean} rAlign (Optional) If true, right-align the text to the margin at (x + width). Requires the width
+   * parameter to have been specified.
    * @returns {number}
    */
-  public drawString(str: string, x: number, y: number, color?: string, width?: number): number {
+  public drawString(str: string, x: number, y: number, color?: string, width?: number, rAlign?: boolean): number {
     let wordXPosition = 0;
     let yOffset = 0;
-
-    let lines = str.split(this.LINE_BREAK_INDICATOR);
+    width = width || Number.MAX_VALUE;
 
     const baseColor = color ? color : 'white';
     let currentColor = baseColor;
     let isColorSwitched = false;
 
-    for (let l = 0; l !== lines.length; ++l) {
-      let tokens = lines[l].split(' ');
+    const paragraphs = str.split(this.LINE_BREAK_INDICATOR);
 
-    for (let t = 0; t !== tokens.length; ++t) {
-      const token = tokens[t];
-      const tokenLengthWithoutColorDirectives = this.lengthWithoutColorDirectives(token);
+    for (let p = 0; p !== paragraphs.length; ++p) {
+      let paragraph = paragraphs[p].split(' ');
 
-      // If an entire word is too big to fit within the line width specified, stop
-      if (wordXPosition === 0 && width && tokenLengthWithoutColorDirectives >= width) {
-        return -1;
+      // Split this paragraph into arrays of strings which represent lines of text that fit the appropriate width.
+      let lines = new Array<Array<string>> ();
+
+      while (paragraph.length > 0) {
+        let lengthOfThisLine = 0;
+        let wrappedLine = Array<string>();
+
+        while (paragraph.length > 0 && lengthOfThisLine + this.lengthWithoutColorDirectives(paragraph[0]) <= width) {
+          lengthOfThisLine += (this.lengthWithoutColorDirectives(paragraph[0]) + 1);
+          wrappedLine.push(<string> paragraph.shift());
+        }
+
+        lines.push(wrappedLine);
       }
 
-      // Move down a line if the next token would exceed the maximum line width, if it was specified
-      if (width && wordXPosition + tokenLengthWithoutColorDirectives > width) {
-        yOffset++;
+      // Draw each array of lines to the terminal
+      for (let l = 0; l !== lines.length; ++l) {
+        const line = lines[l];
         wordXPosition = 0;
-      }
-
-      // Have we wrapped off the bottom of the terminal? Exit here if so
-      if (y + yOffset >= this.h) {
-        return yOffset;
-      }
-
-      // The x-position at which to draw the next character
-      let xOffset = 0;
-
-      // Draw the character (or skip it if it is part of a color directive)
-      for (let i = 0; i !== token.length; ++i) {
-        if (token[i] === this.COLOR_DIRECTIVE_INDICATOR) {
-          // If we have hit a color directive...
-          if (token[i + 1] === '[') {
-            // If it's the beginning of the color directive, change color appropriately and skip the other characters
-            // that make up the color directive
-            const substr = token.substring(i + 2, i + 8);
-            currentColor = '#' + substr;
-            i += 8; // Skip past the other eight [123456] characters
-            isColorSwitched = true;
-          } else {
-            // If it's the end of a color directive, switch back to our base color.
-            currentColor = baseColor;
-            isColorSwitched = false;
-          }
-        } else {
-          const tokenXPosition = x + wordXPosition + xOffset;
-
-          // Don't try to draw outside the horizontal bounds of the terminal.
-          if (tokenXPosition >= 0 && tokenXPosition < this._w) {
-            const currentTile = this.tileAt(x + wordXPosition + xOffset, y + yOffset);
-
-            currentTile.setChar(token[i]);
-            currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
-            currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
-                                    // with characters that inherit any existing rotation on the underlying tile...
-          }
-          
-          xOffset++;
+        if (rAlign && width < Number.MAX_VALUE) { // Is this second conditional necessary?
+          const lineWidth = line.map(wrd => this.lengthWithoutColorDirectives(wrd)).reduce((a, b) => a + b) + (line.length - 1);
+          wordXPosition += width - lineWidth;
         }
 
-        // If there's room at the edge of the terminal after the word, draw a space
-        if (i === token.length - 1 && t !== tokens.length - 1) {
-          const tokenXPosition = x + wordXPosition + xOffset;
-          if (tokenXPosition >= 0 && tokenXPosition < this._w) {
-            this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
-            wordXPosition++;
+        for (let w = 0; w !== line.length; ++w) {
+          let xOffset = 0;
+          const word = line[w];
+          const wordLengthWithoutColorDirectives = this.lengthWithoutColorDirectives(word);
+
+          // Draw the character (or skip it if it is part of a color directive)
+          for (let i = 0; i !== word.length; ++i) {
+            if (word[i] === this.COLOR_DIRECTIVE_INDICATOR) {
+              // If we have hit a color directive...
+              if (word[i + 1] === '[') {
+                // If it's the beginning of the color directive, change color appropriately and skip the other
+                // characters that make up the color directive
+                const substr = word.substring(i + 2, i + 8);
+                currentColor = '#' + substr;
+                i += 8; // Skip past the other eight [123456] characters
+                isColorSwitched = true;
+              } else {
+                // If it's the end of a color directive, switch back to our base color.
+                currentColor = baseColor;
+                isColorSwitched = false;
+              }
+            } else {
+              const cx = x + wordXPosition + xOffset;
+              const cy = y + yOffset;
+              if (this.withinTerminal(cx, cy)) {
+                const currentTile = this.tileAt(cx, cy);
+
+                currentTile.setChar(word[i]);
+                currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
+                currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
+                                        // with characters that inherit any existing rotation on the underlying tile...
+              }
+
+              xOffset++;
+            }
+
+            // If this is not the last word of this line, and we have sufficient room to do so, add a space
+            if (i === word.length - 1 && w !== line.length - 1) {
+              this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
+              wordXPosition++;
+            }
           }
+
+          // Move the cursor horizontally by the length of the of the drawn word and reset the xOffset
+          wordXPosition += wordLengthWithoutColorDirectives;
+          xOffset = 0;
         }
+        yOffset++;
       }
-
-      // Move the cursor horizontally by the length of the of the drawn word and reset the xOffset
-      wordXPosition += tokenLengthWithoutColorDirectives;
-      xOffset = 0;
-    }
-
-      // Line break
-      yOffset += 1;
-      wordXPosition = 0;
     }
 
     return yOffset;
