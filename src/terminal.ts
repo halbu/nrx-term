@@ -54,16 +54,16 @@ export class NRXTerm {
   }
 
   // Getters/setters for private members
-  get x(): number { return this._x; }
-  get y(): number { return this._y; }
-  get w(): number { return this._w; }
-  get h(): number { return this._h; }
-  get tileRedraws(): number { return this.tileRedrawsThisFrame; }
-  get tileWidth(): number { return this._tileWidth; }
-  get tileHeight(): number { return this._tileHeight; }
+  get x(): number                   { return this._x; }
+  get y(): number                   { return this._y; }
+  get w(): number                   { return this._w; }
+  get h(): number                   { return this._h; }
+  get tileRedraws(): number         { return this.tileRedrawsThisFrame; }
+  get tileWidth(): number           { return this._tileWidth; }
+  get tileHeight(): number          { return this._tileHeight; }
 
-  set defaultBgColor(dbgc: string) { this._defaultBgColor = dbgc; }
-  set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
+  set defaultBgColor(dbgc: string)  { this._defaultBgColor = dbgc; }
+  set alwaysUppercase(au: boolean)  { this._alwaysUppercase = au; }
 
   /**
    * Sets up the 2D array of Tiles that represent the entire terminal.
@@ -97,8 +97,7 @@ export class NRXTerm {
   }
 
   /**
-   * Sanity check, throws an error if any part of the terminal is outside the bounds of the canvas. Can be called again
-   * by the user if the canvas or the terminal are resized or moved.
+   * Sanity check, throws an error if any part of the terminal is outside the bounds of the canvas.
    * @returns void
    */
   public assertPositionAndDimensionsAreValid(): void {
