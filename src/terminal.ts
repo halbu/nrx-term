@@ -153,7 +153,9 @@ export class NRXTerm {
         if (tile.hasChanged() || tile.forceRedraw) {
           this.tileRedrawsThisFrame++;
           this.paintBgColor(x, y, tile.bgc, tile.bga);
-          this.paintFgCharacter(x, y, (this._alwaysUppercase) ? tile.char.toUpperCase() : tile.char, tile.fgc, tile.rot);
+          this.paintFgCharacter(x, y, (this._alwaysUppercase)
+            ? tile.char.toUpperCase()
+            : tile.char, tile.fgc, tile.rot);
           tile.forceRedraw = false;
           tile.uncolored = true;
         }
@@ -284,7 +286,9 @@ export class NRXTerm {
         const line = lines[l];
         wordXPosition = 0;
         if (rAlign && width < Number.MAX_VALUE) { // Is this second conditional necessary?
-          const lineWidth = line.map(wrd => this.lengthWithoutColorDirectives(wrd)).reduce((a, b) => a + b) + (line.length - 1);
+          const lineWidth = line.map(wrd => {
+            return this.lengthWithoutColorDirectives(wrd);
+          }).reduce((a, b) => a + b) + (line.length - 1);
           wordXPosition += width - lineWidth;
         }
 
@@ -317,8 +321,9 @@ export class NRXTerm {
 
                 currentTile.setChar(word[i]);
                 currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
-                currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
-                                        // with characters that inherit any existing rotation on the underlying tile...
+                currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
+                                        // terminal with characters that inherit any existing rotation on the
+                                        // underlying tile...
               }
 
               xOffset++;
