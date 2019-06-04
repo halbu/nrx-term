@@ -262,16 +262,13 @@ export class NRXTerm {
       const token = tokens[t];
       const tokenLengthWithoutColorDirectives = this.lengthWithoutColorDirectives(token);
 
-      // If an entire word is too big to fit and would overrun the right edge of the terminal, stop
-      if ((wordXPosition === 0) && (x + tokenLengthWithoutColorDirectives >= this.w)) {
+      // If an entire word is too big to fit within the line width specified, stop
+      if (wordXPosition === 0 && width && tokenLengthWithoutColorDirectives >= width) {
         return -1;
       }
 
-      // Move down a line if the next token would overrun the right edge of the terminal, or exceed the maximum width
-      if (
-        x + wordXPosition + tokenLengthWithoutColorDirectives >= this.w ||
-        width && wordXPosition + tokenLengthWithoutColorDirectives > width
-      ) {
+      // Move down a line if the next token would exceed the maximum line width, if it was specified
+      if (width && wordXPosition + tokenLengthWithoutColorDirectives > width) {
         yOffset++;
         wordXPosition = 0;
       }
@@ -301,19 +298,25 @@ export class NRXTerm {
             isColorSwitched = false;
           }
         } else {
-          const currentTile = this.tileAt(x + wordXPosition + xOffset, y + yOffset);
+          const tokenXPosition = x + wordXPosition + xOffset;
 
-          currentTile.setChar(token[i]);
-          currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
-          currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
-                                  // with characters that inherit any existing rotation on the underlying tile...
+          // Don't try to draw outside the horizontal bounds of the terminal.
+          if (tokenXPosition >= 0 && tokenXPosition < this._w) {
+            const currentTile = this.tileAt(x + wordXPosition + xOffset, y + yOffset);
+
+            currentTile.setChar(token[i]);
+            currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
+            currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the terminal
+                                    // with characters that inherit any existing rotation on the underlying tile...
+          }
           
           xOffset++;
         }
 
         // If there's room at the edge of the terminal after the word, draw a space
         if (i === token.length - 1 && t !== tokens.length - 1) {
-          if (this.tileAt(x + wordXPosition + xOffset, y + yOffset)) {
+          const tokenXPosition = x + wordXPosition + xOffset;
+          if (tokenXPosition >= 0 && tokenXPosition < this._w) {
             this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
             wordXPosition++;
           }
