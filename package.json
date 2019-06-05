@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/halbu/nrx-term#readme",
   "devDependencies": {
-    "tslint": "^5.12.0",
+    "tslint": "^5.17.0",
     "typescript": "^3.2.2"
   },
   "files": [
