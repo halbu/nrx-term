@@ -1,4 +1,6 @@
 import { NRXTile } from './tile';
+import { InputHandler } from './input-handler';
+import { Point } from './point';
 
 export class NRXTerm {
   private _x: number;
@@ -8,6 +10,7 @@ export class NRXTerm {
 
   private tilemap: Array<Array<NRXTile>>;
   private ctx: CanvasRenderingContext2D;
+  private inputHandler: InputHandler;
   private tileRedrawsThisFrame = 0;
   private fontFamily: string;
   private fontSize: number;
@@ -48,6 +51,7 @@ export class NRXTerm {
     this.assertPositionAndDimensionsAreValid();
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
+    this.inputHandler = new InputHandler(this.ctx.canvas);
 
     this.tilemap = [[]]; // To make the compiler happy
     this.initialiseTiles();
@@ -365,5 +369,57 @@ export class NRXTerm {
       } else { strlen++; }
     }
     return strlen;
+  }
+
+  /**
+   * Resets the input handler variables which track whether a key or mouse button has been pressed this frame, and
+   * whether the mouse has been moved this frame. Call this function at the end of every frame cycle in your
+   * application loop.
+   * @returns void
+   */
+  public nextFrame(): void {
+    this.inputHandler.mouseMovedThisFrame = false;
+    this.inputHandler.keyPressedThisFrame = -1;
+  }
+
+  /**
+   * Returns the event keycode of the key pressed this frame, or if a mouse button has been clicked, either 1000 (left
+   * mouse button) or 1001 (right mouse button). Returns -1 if neither any key nor any mouse button has been pressed.
+   * @returns number
+   */
+  get keypress(): number {
+    return this.inputHandler.keyPressedThisFrame;
+  }
+
+  /**
+   * Returns a JavaScript object literal containing a set of keys representing the event keycodes of all keys on the
+   * keyboard that are currently held down (as well as potentially the codes 1000 and 1001 representing the left and
+   * right mouse buttons).
+   * @returns any
+   */
+  // tslint:disable-next-line:no-any
+  get keyboard(): any {
+    return this.inputHandler.keyboardMap;
+  }
+
+  /**
+   * Returns a Point representing the 2D co-ordinates of the mouse within the canvas.
+   * @returns Point
+   */
+  get mouse(): Point {
+    return this.inputHandler.mouse;
+  }
+
+  /**
+   * Returns a Point representing the mouse's X-Y position in terms of cells within the terminal.
+   * FIXME: This function currently assumes that the terminal's upper-left point is at 0,0 on the canvas, which is not
+   * guaranteed to be true.
+   * @returns Point
+   */
+  get mouseTerminalPosition(): Point {
+    return new Point(
+      Math.floor((this.inputHandler.mouse.x - this.x) / this.tileWidth),
+      Math.floor((this.inputHandler.mouse.y - this.y) / this.tileHeight)
+    );
   }
 }
