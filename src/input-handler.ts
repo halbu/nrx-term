@@ -2,7 +2,6 @@ import { Point } from './point';
 
 export class InputHandler {
   private cnv: HTMLCanvasElement;
-  // tslint:disable-next-line:no-any
   public mouse: Point;
   public mouseMovedThisFrame: boolean;
   // tslint:disable-next-line:no-any
