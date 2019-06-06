@@ -6,7 +6,7 @@ export class InputHandler {
   public mouseMovedThisFrame: boolean;
   // tslint:disable-next-line:no-any
   public keyboardMap: any;
-  public keyPressedThisFrame: number;
+  public keysPressedThisFrame: Array<number>;
 
   /**
    * @param  {HTMLCanvasElement} cnv The HTML5 Canvas to which we wish to attach our input handler.
@@ -16,7 +16,7 @@ export class InputHandler {
     this.mouse = new Point(0, 0);
     this.mouseMovedThisFrame = false;
     this.keyboardMap = {};
-    this.keyPressedThisFrame = -1;
+    this.keysPressedThisFrame = new Array<number>();
 
     this.attachListeners();
   }
@@ -31,7 +31,7 @@ export class InputHandler {
         e.preventDefault();
       }
       this.keyboardMap[e.keyCode] = true;
-      this.keyPressedThisFrame = e.keyCode;
+      this.keysPressedThisFrame.push(e.keyCode);
     };
 
     window.onkeyup = (e) => {
@@ -41,10 +41,10 @@ export class InputHandler {
     this.cnv.addEventListener('mousedown', (e) => {
       if (e.which === 1) {
         this.keyboardMap.M1 = true;
-        this.keyPressedThisFrame = 1000;
+        this.keysPressedThisFrame.push(1000);
       } else if (e.which === 3) {
         this.keyboardMap.M2 = true;
-        this.keyPressedThisFrame = 1001;
+        this.keysPressedThisFrame.push(1001);
       }
     }, false);
 

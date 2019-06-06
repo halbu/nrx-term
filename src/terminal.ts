@@ -58,16 +58,16 @@ export class NRXTerm {
   }
 
   // Getters/setters for private members
-  get x(): number                   { return this._x; }
-  get y(): number                   { return this._y; }
-  get w(): number                   { return this._w; }
-  get h(): number                   { return this._h; }
-  get tileRedraws(): number         { return this.tileRedrawsThisFrame; }
-  get tileWidth(): number           { return this._tileWidth; }
-  get tileHeight(): number          { return this._tileHeight; }
+  get x(): number { return this._x; }
+  get y(): number { return this._y; }
+  get w(): number { return this._w; }
+  get h(): number { return this._h; }
+  get tileRedraws(): number { return this.tileRedrawsThisFrame; }
+  get tileWidth(): number { return this._tileWidth; }
+  get tileHeight(): number { return this._tileHeight; }
 
-  set defaultBgColor(dbgc: string)  { this._defaultBgColor = dbgc; }
-  set alwaysUppercase(au: boolean)  { this._alwaysUppercase = au; }
+  set defaultBgColor(dbgc: string) { this._defaultBgColor = dbgc; }
+  set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 
   /**
    * Sets up the 2D array of Tiles that represent the entire terminal.
@@ -271,7 +271,7 @@ export class NRXTerm {
       let paragraph = paragraphs[p].split(' ');
 
       // Split this paragraph into arrays of strings which represent lines of text that fit the appropriate width.
-      let lines = new Array<Array<string>> ();
+      let lines = new Array<Array<string>>();
 
       while (paragraph.length > 0) {
         let lengthOfThisLine = 0;
@@ -326,8 +326,8 @@ export class NRXTerm {
                 currentTile.setChar(word[i]);
                 currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
-                                        // terminal with characters that inherit any existing rotation on the
-                                        // underlying tile...
+                // terminal with characters that inherit any existing rotation on the
+                // underlying tile...
               }
 
               xOffset++;
@@ -379,7 +379,17 @@ export class NRXTerm {
    */
   public nextFrame(): void {
     this.inputHandler.mouseMovedThisFrame = false;
-    this.inputHandler.keyPressedThisFrame = -1;
+    this.inputHandler.keysPressedThisFrame = new Array<number>();
+  }
+
+  /**
+   * Returns true if the specified keycode (or 1000/1001 for left/right mouse buttons) is found in the array of
+   * keycodes which represents keys pressed this frame.
+   * @param  {number} keycode The JavaScript event keycode of the key in question
+   * @returns boolean
+   */
+  public isKeyDown(keycode: number): boolean {
+    return this.keypresses.includes(keycode);
   }
 
   /**
@@ -387,8 +397,8 @@ export class NRXTerm {
    * mouse button) or 1001 (right mouse button). Returns -1 if neither any key nor any mouse button has been pressed.
    * @returns number
    */
-  get keypress(): number {
-    return this.inputHandler.keyPressedThisFrame;
+  get keypresses(): Array<number> {
+    return this.inputHandler.keysPressedThisFrame;
   }
 
   /**
