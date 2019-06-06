@@ -1,4 +1,5 @@
 import { Point } from './point';
+import { InputConstants } from './input-constants';
 
 export class InputHandler {
   private cnv: HTMLCanvasElement;
@@ -27,7 +28,7 @@ export class InputHandler {
    */
   public attachListeners(): void {
     window.onkeydown = (e) => {
-      if (e.keyCode === 18 || e.keyCode === 32 || e.keyCode === 9) {
+      if ([InputConstants.Keys.Tab, InputConstants.Keys.Space, InputConstants.Keys.Enter].includes(e.keyCode)) {
         e.preventDefault();
       }
       this.keyboardMap[e.keyCode] = true;
@@ -40,19 +41,19 @@ export class InputHandler {
 
     this.cnv.addEventListener('mousedown', (e) => {
       if (e.which === 1) {
-        this.keyboardMap.M1 = true;
-        this.keysPressedThisFrame.push(1000);
+        this.keyboardMap[InputConstants.Mouse.Left] = true;
+        this.keysPressedThisFrame.push(InputConstants.Mouse.Left);
       } else if (e.which === 3) {
-        this.keyboardMap.M2 = true;
-        this.keysPressedThisFrame.push(1001);
+        this.keyboardMap[InputConstants.Mouse.Right] = true;
+        this.keysPressedThisFrame.push(InputConstants.Mouse.Right);
       }
     }, false);
 
     this.cnv.addEventListener('mouseup', (e) => {
       if (e.which === 1) {
-        this.keyboardMap.M1 = false;
+        this.keyboardMap[InputConstants.Mouse.Left] = false;
       } else if (e.which === 3) {
-        this.keyboardMap.M2 = false;
+        this.keyboardMap[InputConstants.Mouse.Right] = false;
       }
     }, false);
 

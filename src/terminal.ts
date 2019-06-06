@@ -1,6 +1,7 @@
 import { NRXTile } from './tile';
 import { InputHandler } from './input-handler';
 import { Point } from './point';
+import { InputConstants } from './input-constants';
 
 export class NRXTerm {
   private _x: number;
@@ -431,5 +432,16 @@ export class NRXTerm {
       Math.floor((this.inputHandler.mouse.x - this.x) / this.tileWidth),
       Math.floor((this.inputHandler.mouse.y - this.y) / this.tileHeight)
     );
+  }
+
+  /**
+   * Returns a JavaScript object literal containing constant values for all mouse buttons and keyboard keys, organised
+   * under the two subheadings Input.Mouse and Input.Keys. To be used in (if desired!) place of integer keycodes by
+   * dependent applications when checking the state of a particular mouse button or keyboard key.
+   * @returns any
+   */
+  // tslint:disable-next-line:no-any
+  static get Input(): any {
+    return InputConstants;
   }
 }
