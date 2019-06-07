@@ -2,6 +2,7 @@ import { NRXTile } from './tile';
 import { InputHandler } from './input-handler';
 import { Point } from './point';
 import { InputConstants } from './input-constants';
+import { TerminalRenderer } from './terminal-renderer';
 
 export class NRXTerm {
   private _x: number;
@@ -9,18 +10,17 @@ export class NRXTerm {
   private _w: number;
   private _h: number;
 
-  private tilemap: Array<Array<NRXTile>>;
-  private ctx: CanvasRenderingContext2D;
-  private inputHandler: InputHandler;
-  private tileRedrawsThisFrame = 0;
-  private fontFamily: string;
-  private fontSize: number;
-
-  private _alwaysUppercase = false;
-
   private _tileWidth: number;
   private _tileHeight: number;
-  private _defaultBgColor = '#000000';
+  private _fontFamily: string;
+  private _fontSize: number;
+  
+  private _alwaysUppercase = false;
+
+  private tilemap: Array<Array<NRXTile>>;
+  private _ctx: CanvasRenderingContext2D;
+  private inputHandler: InputHandler;
+  private terminalRenderer: TerminalRenderer;
 
   private readonly COLOR_DIRECTIVE_INDICATOR = '$';
   private readonly LINE_BREAK_INDICATOR = '^';
@@ -39,9 +39,9 @@ export class NRXTerm {
    */
   constructor(x: number, y: number, w: number, h: number, ctx: CanvasRenderingContext2D, fontFamily: string,
     fontSize: number, tileWidth: number, tileHeight: number) {
-    this.ctx = ctx;
-    this.fontSize = fontSize;
-    this.fontFamily = fontFamily;
+    this._ctx = ctx;
+    this._fontSize = fontSize;
+    this._fontFamily = fontFamily;
     this._x = x;
     this._y = y;
     this._w = w;
@@ -53,8 +53,9 @@ export class NRXTerm {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.inputHandler = new InputHandler(this.ctx.canvas);
+    this.terminalRenderer = new TerminalRenderer(this);
 
-    this.tilemap = [[]]; // To make the compiler happy
+    this.tilemap = new Array<Array<NRXTile>>();
     this.initialiseTiles();
   }
 
@@ -63,11 +64,14 @@ export class NRXTerm {
   get y(): number { return this._y; }
   get w(): number { return this._w; }
   get h(): number { return this._h; }
-  get tileRedraws(): number { return this.tileRedrawsThisFrame; }
+  get ctx(): CanvasRenderingContext2D { return this._ctx; }
+  get fontFamily(): string { return this._fontFamily; }
+  get fontSize(): number { return this._fontSize; }
+  get tileRedrawsThisFrame(): number { return this.terminalRenderer.totalTileDraws; }
+  get bgRectDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
 
-  set defaultBgColor(dbgc: string) { this._defaultBgColor = dbgc; }
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 
   /**
@@ -118,6 +122,15 @@ export class NRXTerm {
   }
 
   /**
+   * Draws the complete terminal to the canvas at the specified position. Will only redraw cells that have changed
+   * in some way since the last draw, unless a tile's forceRedraw flag has been set to true.
+   * @returns {void}
+   */
+  public render(): void {
+    this.terminalRenderer.drawToCanvas();
+  }
+
+  /**
    * Reports whether the specified x-y location is a valid position within the bounds of the terminal
    * @param  {number} x X-position to test
    * @param  {number} y Y-position to test
@@ -140,84 +153,6 @@ export class NRXTerm {
     }
 
     return this.tilemap[x][y];
-  }
-
-  /**
-   * Draws the complete terminal to the canvas at the specified position. Will only redraw cells that have changed
-   * in some way since the last draw, unless a tile's forceRedraw flag has been set to true.
-   * @returns {void}
-   */
-  public drawToCanvas(): void {
-    this.ctx.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
-    this.tileRedrawsThisFrame = 0;
-
-    for (let x = 0; x !== this.w; x++) {
-      for (let y = 0; y !== this.h; y++) {
-        const tile = this.tileAt(x, y);
-
-        if (tile.hasChanged() || tile.forceRedraw) {
-          this.tileRedrawsThisFrame++;
-          this.paintBgColor(x, y, tile.bgc, tile.bga);
-          this.paintFgCharacter(x, y, (this._alwaysUppercase)
-            ? tile.char.toUpperCase()
-            : tile.char, tile.fgc, tile.rot);
-          tile.forceRedraw = false;
-          tile.uncolored = true;
-        }
-
-        tile.cloneTileState(); // Store the state of the tile to detect changes on next redraw
-      }
-    }
-  }
-
-  /**
-   * Fills a tile entirely with the specified color at the specified alpha value.
-   * @param  {number} x X-position of tile to paint color to
-   * @param  {number} y Y-position of tile to paint color to
-   * @param  {string} c Color (in form '#ff00ff') to paint as background color
-   * @param  {number} a Alpha value of color
-   * @returns {void}
-   */
-  private paintBgColor(x: number, y: number, c: string, a: number): void {
-    // Black out the Tile on the canvas
-    this.ctx.fillStyle = this._defaultBgColor;
-    this.ctx.fillRect(this.x + x * this._tileWidth, this.y + y * this._tileHeight, this._tileWidth, this._tileHeight);
-
-    // Apply alpha if it has been specified
-    if (a) {
-      this.ctx.globalAlpha = a;
-    }
-
-    // Paint new background color to tile
-    this.ctx.fillStyle = c;
-    this.ctx.fillRect(this.x + x * this._tileWidth, this.y + y * this._tileHeight, this._tileWidth, this._tileHeight);
-    this.ctx.globalAlpha = 1.0;
-  }
-
-  /**
-   * Paints a character, s, to the terminal at position x, y using color c, rotated by angle rotationAngle
-   * @param  {number} x The x-position of the tile to draw the foreground character to
-   * @param  {number} y The y-position of the tile to draw the foreground character to
-   * @param  {string} s The character to draw
-   * @param  {string} c The color to use to draw the character. Defaults to white
-   * @param  {number} rotationAngle The amount of rotation (in radians) to be applied to the character
-   * @returns {void}
-   */
-  private paintFgCharacter(x: number, y: number, s: string, c: string, rotationAngle: number): void {
-    this.ctx.fillStyle = (c === null) ? 'white' : c;
-
-    const cx = this.x + x * this._tileWidth + this._tileWidth / 2;
-    const cy = this.y + y * this._tileHeight + this._tileHeight / 2;
-
-    if (rotationAngle && rotationAngle !== 0) {
-      this.ctx.save();
-      this.ctx.translate(cx, cy);
-      this.ctx.rotate(rotationAngle);
-      this.ctx.fillText(s, 0, 0);
-      this.ctx.restore();
-    } else {
-      this.ctx.fillText(s, cx, cy);
-    }
   }
 
   /**

@@ -4,6 +4,7 @@
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
+    "noImplicitAny": false,                 /* Raise error on expressions and declarations with an implied 'any' type. */
     "strict": true
   },
   "include": [
