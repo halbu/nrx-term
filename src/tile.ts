@@ -32,15 +32,23 @@ export class NRXTile {
   }
 
   /**
-   * Tests to see if a tile has changed in any way (character, foreground color, background color/alpha, or rotation).
+   * Tests to see if a tile's foreground has changed in any way (character, color, or rotation).
    * @returns {boolean}
    */
-  public hasChanged(): boolean {
+  public hasForegroundChanged(): boolean {
     if (this._currentTileState.char !== this._previousTileState.char) { return true; }
     if (this._currentTileState.fgc !== this._previousTileState.fgc) { return true; }
+    if (this._currentTileState.rot !== this._previousTileState.rot) { return true; }
+    return false;
+  }
+
+  /**
+   * Tests to see if a tile's background has changed in any way (color or alpha).
+   * @returns {boolean}
+   */
+  public hasBackgroundChanged(): boolean {
     if (this._currentTileState.bgc !== this._previousTileState.bgc) { return true; }
     if (this._currentTileState.bga !== this._previousTileState.bga) { return true; }
-    if (this._currentTileState.rot !== this._previousTileState.rot) { return true; }
     return false;
   }
 

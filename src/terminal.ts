@@ -18,7 +18,10 @@ export class NRXTerm {
   private _alwaysUppercase = false;
 
   private tilemap: Array<Array<NRXTile>>;
-  private _ctx: CanvasRenderingContext2D;
+
+  private _bgCtx: CanvasRenderingContext2D;
+  private _fgCtx: CanvasRenderingContext2D;
+
   private inputHandler: InputHandler;
   private terminalRenderer: TerminalRenderer;
 
@@ -37,22 +40,35 @@ export class NRXTerm {
    * @param  {number} tileWidth The width of a terminal tile, in pixels
    * @param  {number} tileHeight The height of a terminal tile, in pixels
    */
-  constructor(x: number, y: number, w: number, h: number, ctx: CanvasRenderingContext2D, fontFamily: string,
+  constructor(el: HTMLElement, x: number, y: number, w: number, h: number, fontFamily: string,
     fontSize: number, tileWidth: number, tileHeight: number) {
-    this._ctx = ctx;
+    let pixelWidth = w * tileWidth;
+    let pixelHeight = h * tileHeight;
+
+    el.insertAdjacentHTML('beforeend', '<canvas id="nrxBackgroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
+    el.insertAdjacentHTML('beforeend', '<canvas id="nrxForegroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
+    let fgcnv = <HTMLCanvasElement> document.getElementById('nrxForegroundCanvas');
+    let bgcnv = <HTMLCanvasElement> document.getElementById('nrxBackgroundCanvas');
+    fgcnv.width = pixelWidth;
+    fgcnv.height = pixelHeight;
+    bgcnv.width = pixelWidth;
+    bgcnv.height = pixelHeight;
+    this._fgCtx = <CanvasRenderingContext2D> fgcnv.getContext('2d');
+    this._bgCtx = <CanvasRenderingContext2D> bgcnv.getContext('2d');
+
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
-    this._x = x;
-    this._y = y;
+    this._x = 0;
+    this._y = 0;
     this._w = w;
     this._h = h;
     this._tileWidth = tileWidth;
     this._tileHeight = tileHeight;
 
     this.assertPositionAndDimensionsAreValid();
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.inputHandler = new InputHandler(this.ctx.canvas);
+    this._fgCtx.textAlign = 'center';
+    this._fgCtx.textBaseline = 'middle';
+    this.inputHandler = new InputHandler(this._fgCtx.canvas);
     this.terminalRenderer = new TerminalRenderer(this);
 
     this.tilemap = new Array<Array<NRXTile>>();
@@ -64,13 +80,15 @@ export class NRXTerm {
   get y(): number { return this._y; }
   get w(): number { return this._w; }
   get h(): number { return this._h; }
-  get ctx(): CanvasRenderingContext2D { return this._ctx; }
+  get fgCtx(): CanvasRenderingContext2D { return this._fgCtx; }
+  get bgCtx(): CanvasRenderingContext2D { return this._bgCtx; }
   get fontFamily(): string { return this._fontFamily; }
   get fontSize(): number { return this._fontSize; }
-  get tileRedrawsThisFrame(): number { return this.terminalRenderer.totalTileDraws; }
-  get bgRectDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
+  
+  get fgTileDrawsThisFrame(): number { return this.terminalRenderer.fgTileDraws; }    // Stats that the parent app
+  get bgBatchDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }  // can monitor if desired
 
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 
@@ -111,8 +129,8 @@ export class NRXTerm {
    */
   public assertPositionAndDimensionsAreValid(): void {
     if (
-      this.x + this.w * this._tileWidth > this.ctx.canvas.width ||
-      this.y + this.h * this._tileHeight > this.ctx.canvas.height ||
+      this.x + this.w * this._tileWidth > this._fgCtx.canvas.width ||
+      this.y + this.h * this._tileHeight > this._fgCtx.canvas.height ||
       this.x < 0 ||
       this.y < 0
     ) {

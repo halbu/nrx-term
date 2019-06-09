@@ -4,7 +4,7 @@
     "member-ordering": [
       false
     ],
-    "no-any": true,
+    "no-any": false,
     "no-inferrable-types": true,
     "no-internal-module": true,
     "no-var-requires": false,

@@ -5,7 +5,7 @@ export class TerminalRenderer {
   private backgroundDraws: Map<string, Array<any>>;
   private foregroundDraws: Map<string, Array<any>>;
   public bgBatchDraws = 0;
-  public totalTileDraws = 0;
+  public fgTileDraws = 0;
   
   constructor(terminal: NRXTerm) {
     this.terminal = terminal;
@@ -20,9 +20,9 @@ export class TerminalRenderer {
    */
   public drawToCanvas(): void {
     this.bgBatchDraws = 0;
-    this.totalTileDraws = 0;
+    this.fgTileDraws = 0;
 
-    this.terminal.ctx.font = '' + this.terminal.fontSize + "px '" + this.terminal.fontFamily + "'";
+    this.terminal.fgCtx.font = '' + this.terminal.fontSize + "px '" + this.terminal.fontFamily + "'";
 
     /*
     The 'backgroundDraws' object is a map, which stores colors as its keys, with the value for each key being an array
@@ -40,10 +40,27 @@ export class TerminalRenderer {
         {x: 3, y: 7, w: 14},
       ],
     }
+
+    The 'foregroundDraws' object is a similar map, with each key being a color. The value for each key is an array of
+    single cells which need to be redrawn, as fillText() calls can't be batched into groups in the same fashion as
+    drawing simple rects can.
+
+    "foregroundDraws": {
+      '#000000'; : [
+        {x: 0, y: 0, c: 'H;},
+        {x: 1, y: 0, c: 'i;},
+        {x: 2, y: 0, c: '!'},
+      ],
+      '#FF00FF'; : [
+        {x: 3, y: 3, c: '%'},
+        {x: 3, y: 7, c: 'Q'},
+      ],
+    }
     */
     
     this.backgroundDraws = new Map<string, Array<any>>();
     this.foregroundDraws = new Map<string, Array<any>>();
+    
     let batch;    // Of the form {x: 0, y: 0, w: 0} - represents a rect of solid color to be drawn to the canvas.
     let lx = 0;   // The x position of the last tile that was added to the in-progress batch.
     let lc = '';  // The color of the in-progress batch.
@@ -54,8 +71,8 @@ export class TerminalRenderer {
       for (let x = 0; x !== this.terminal.w; x++) {
         const tile = this.terminal.tileAt(x, y);
 
-        // Does this cell need updating?
-        if (!(tile.hasChanged() || tile.forceRedraw)) {
+        // Does this cell's background need updating?
+        if (!(tile.hasBackgroundChanged() || tile.forceRedraw)) {
           // No it doesn't. If there's an active batch, add it to the array value associated with the appropriate color
           // key in the backgroundDraws map.
           if (batch) {
@@ -90,19 +107,20 @@ export class TerminalRenderer {
               lc = tile.bgc;
             }
           }
+        }
 
+        // Does this tile's foreground need updating?
+        if (tile.hasForegroundChanged() || tile.forceRedraw) {
           // Foreground character batching that is again done currently by batching like colors together
           if (this.foregroundDraws[tile.fgc]) {
             this.foregroundDraws[tile.fgc].push({ x: x, y: y, c: tile.char });
           } else {
             this.foregroundDraws[tile.fgc] = [{ x: x, y: y, c: tile.char }];
           }
-
-          tile.forceRedraw = false;
-          tile.uncolored = true;
-          this.totalTileDraws++;
         }
 
+        tile.forceRedraw = false;
+        tile.uncolored = true;
         tile.cloneTileState(); // Store the state of the tile to detect changes on next redraw
       }
     }
@@ -126,12 +144,12 @@ export class TerminalRenderer {
   private drawBackgroundBatches(): void {
     Object.keys(this.backgroundDraws).forEach(k => {
       let colorBatch = this.backgroundDraws[k];
-      this.terminal.ctx.fillStyle = k;
+      this.terminal.bgCtx.fillStyle = k;
 
       for (let i = 0; i !== colorBatch.length; ++i) {
         this.bgBatchDraws++;
         let r = colorBatch[i];
-        this.terminal.ctx.fillRect(
+        this.terminal.bgCtx.fillRect(
           this.terminal.x + r.x * this.terminal.tileWidth,
           this.terminal.y + r.y * this.terminal.tileHeight,
           r.w * this.terminal.tileWidth,
@@ -142,14 +160,17 @@ export class TerminalRenderer {
 
   private drawForegroundBatches(): void {
     Object.keys(this.foregroundDraws).forEach(fgc => {
-      this.terminal.ctx.fillStyle = fgc;
+      this.terminal.fgCtx.fillStyle = fgc;
 
       this.foregroundDraws[fgc].forEach(t => {
+        this.fgTileDraws++;
+        const cx = this.terminal.x + t.x * this.terminal.tileWidth;
+        const cy = this.terminal.y + t.y * this.terminal.tileHeight;
 
-        const cx = this.terminal.x + t.x * this.terminal.tileWidth + this.terminal.tileWidth / 2;
-        const cy = this.terminal.y + t.y * this.terminal.tileHeight + this.terminal.tileHeight / 2;
-
-        this.terminal.ctx.fillText(t.c, cx, cy);
+        this.terminal.fgCtx.clearRect(cx, cy, this.terminal.tileWidth, this.terminal.tileHeight);
+        if (t.c !== ' ') {
+          this.terminal.fgCtx.fillText(t.c, cx + this.terminal.tileWidth / 2, cy + this.terminal.tileHeight / 2);
+        }
       });
     });
   }
