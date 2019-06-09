@@ -14,8 +14,8 @@ export class NRXTerm {
   private _tileHeight: number;
   private _fontFamily: string;
   private _fontSize: number;
-  
-  private _alwaysUppercase = false;
+
+  private _alwaysUppercase = false; // Implement this
 
   private tilemap: Array<Array<NRXTile>>;
 
@@ -66,8 +66,6 @@ export class NRXTerm {
     this._tileHeight = tileHeight;
 
     this.assertPositionAndDimensionsAreValid();
-    this._fgCtx.textAlign = 'center';
-    this._fgCtx.textBaseline = 'middle';
     this.inputHandler = new InputHandler(this._fgCtx.canvas);
     this.terminalRenderer = new TerminalRenderer(this);
 
@@ -86,8 +84,8 @@ export class NRXTerm {
   get fontSize(): number { return this._fontSize; }
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
-  
-  get fgTileDrawsThisFrame(): number { return this.terminalRenderer.fgTileDraws; }    // Stats that the parent app
+
+  get fgBatchDrawsThisFrame(): number { return this.terminalRenderer.fgBatchDraws; }  // Stats that the parent app
   get bgBatchDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }  // can monitor if desired
 
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
@@ -280,8 +278,8 @@ export class NRXTerm {
                 currentTile.setChar(word[i]);
                 currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
-                // terminal with characters that inherit any existing rotation on the
-                // underlying tile...
+                                        // terminal with characters that inherit any existing rotation on the
+                                        // underlying tile...
               }
 
               xOffset++;
