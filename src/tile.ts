@@ -1,3 +1,5 @@
+import { Lerp } from './lerp';
+
 // Holds a representation of what a tile currently looks like.
 class NRXTileState {
   public char = '?';
@@ -64,7 +66,7 @@ export class NRXTile {
         'acceptable range [0, 1].');
     }
 
-    this._currentTileState.bgc = this.lerp(newBgc, this._currentTileState.bgc, proportion);
+    this._currentTileState.bgc = Lerp.getLerp(newBgc, this._currentTileState.bgc, proportion);
   }
 
   /**
@@ -80,26 +82,7 @@ export class NRXTile {
         'acceptable range [0, 1].');
     }
 
-    this._currentTileState.fgc = this.lerp(newFgc, this._currentTileState.fgc, proportion);
-  }
-
-  /**
-   * Lerps newCol into currentCol at a linear interpolation point in the range [0, 1] specified by proportion.
-   * @param  {string} newCol The new color to be lerped into the existing color.
-   * @param  {string} currentCol The existing color.
-   * @param  {number} proportion The proportion of the lerp that should be the new color.
-   * @returns {string} Valid hex-formatted RGB color.
-   */
-  private lerp(newCol: string, currentCol: string, proportion: number): string {
-    let ah = parseInt(newCol.replace(/#/g, ''), 16),
-      ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
-      bh = parseInt(currentCol.replace(/#/g, ''), 16),
-      br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
-      rr = ar + proportion * (br - ar),
-      rg = ag + proportion * (bg - ag),
-      rb = ab + proportion * (bb - ab);
-
-    return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+    this._currentTileState.fgc = Lerp.getLerp(newFgc, this._currentTileState.fgc, proportion);
   }
 
   // Methods that allow the display characteristics of the tile to be modified.
