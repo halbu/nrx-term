@@ -71,6 +71,9 @@ export class NRXTerm {
 
     this.tilemap = new Array<Array<NRXTile>>();
     this.initialiseTiles();
+
+    this._fgCtx.imageSmoothingEnabled = false;
+    this._bgCtx.imageSmoothingEnabled = false;
   }
 
   // Getters/setters for private members
@@ -85,8 +88,9 @@ export class NRXTerm {
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
 
-  get fgBatchDrawsThisFrame(): number { return this.terminalRenderer.fgBatchDraws; }  // Stats that the parent app
-  get bgBatchDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }  // can monitor if desired
+  get fgIndividualDrawsThisFrame(): number { return this.terminalRenderer.fgIndividualDraws; }  // Stats that
+  get fgBatchDrawsThisFrame(): number { return this.terminalRenderer.fgBatchDraws; }  // the parent app can
+  get bgBatchDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }  // monitor if desired
 
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 
@@ -278,8 +282,8 @@ export class NRXTerm {
                 currentTile.setChar(word[i]);
                 currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
-                                        // terminal with characters that inherit any existing rotation on the
-                                        // underlying tile...
+                // terminal with characters that inherit any existing rotation on the
+                // underlying tile...
               }
 
               xOffset++;
