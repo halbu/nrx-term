@@ -12,6 +12,14 @@ export class Point {
   }
 
   /**
+   * Returns a clone of this Point with identical X and Y values.
+   * @returns Point
+   */
+  public clone(): Point {
+    return new Point(this.x, this.y);
+  }
+
+  /**
    * Test for equality between this Point and another Point. Returns true if the two Points have identical X and Y
    * values, else returns false.
    * @param  {Point} that The Point to be tested for equality with this Point.
@@ -19,6 +27,22 @@ export class Point {
    */
   public equals(that: Point): boolean {
     return (this.x === that.x && this.y === that.y);
+  }
+
+  /**
+   * Returns the straight-line distance between two points.
+   * @returns number
+   */
+  public distanceTo(that: Point): number {
+    return Math.sqrt((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y));
+  }
+
+  /**
+   * Returns the Manhattan distance (sum of differences between X-positions and Y-positions) between two points.
+   * @returns number
+   */
+  public manhattanDistanceTo(that: Point): number {
+    return Math.sqrt(this.x - that.x) + Math.abs(this.y + that.y);
   }
 
   /**

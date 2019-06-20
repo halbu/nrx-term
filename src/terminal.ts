@@ -328,14 +328,15 @@ export class NRXTerm {
   }
 
   /**
-   * Resets the input handler variables which track whether a key or mouse button has been pressed this frame, and
-   * whether the mouse has been moved this frame. Call this function at the end of every frame cycle in your
-   * application loop.
+   * Resets the input handler variables which track whether a key or mouse button has been pressed this frame, whether
+   * the mouse has been moved this frame, and whether a mouse-drag action has been completed this frame. Call this
+   * function at the end of every frame cycle in your application loop.
    * @returns void
    */
   public nextFrame(): void {
     this.inputHandler.mouseMovedThisFrame = false;
     this.inputHandler.keysPressedThisFrame = new Array<number>();
+    this.inputHandler.dragCompletedThisFrame = false;
   }
 
   /**
@@ -377,16 +378,60 @@ export class NRXTerm {
   }
 
   /**
+   * Returns a constant representing the state of any mouse-drag action that may be in progress. The possible states
+   * are defined in InputConstants.Mouse.DragStatus, and are None, Active (the left mouse button has been pressed and
+   * the mouse moved more than ten pixels from the mousedown event) and Completed (the left mouse button was released
+   * this frame, ending a mouse-drag action that was in progress).
+   * @returns number
+   */
+  get dragStatus(): number {
+    if (this.inputHandler.isActiveDrag()) {
+      return InputConstants.Mouse.DragStatus.Active;
+    } else if (this.inputHandler.dragCompletedThisFrame) {
+      return InputConstants.Mouse.DragStatus.Finished;
+    } else {
+      return InputConstants.Mouse.DragStatus.None;
+    }
+  }
+
+  /**
+   * Returns a tuple of Points representing the start and end cells of a mouse-drag action, or null if no mouse-drag
+   * action is currently in progress.
+   * @returns [Point, Point] | null
+   */
+  get dragPoints(): [Point, Point] | null {
+    if (this.dragStatus !== InputConstants.Mouse.DragStatus.None) {
+      return [
+        this.canvasToTerminal(this.inputHandler.dragOrigin),
+        this.canvasToTerminal(this.inputHandler.mouse)
+      ];
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Accepts a Point containing 2D pixel co-ordinates with the terminal's canvas, and returns a Point containing the 2D
+   * co-ordinates of the terminal tile that those pixel co-ordinates are within.
+   * co-ordinates.
+   * @param  {Point} p The Point containing the pixel co-ordinates to be converted to a tile position.
+   * @returns Point
+   */
+  private canvasToTerminal(p: Point): Point {
+    return new Point(
+      Math.floor(p.x / this.tileWidth),
+      Math.floor(p.y / this.tileHeight)
+    );
+  }
+
+  /**
    * Returns a Point representing the mouse's X-Y position in terms of cells within the terminal.
    * FIXME: This function currently assumes that the terminal's upper-left point is at 0,0 on the canvas, which is not
    * guaranteed to be true.
    * @returns Point
    */
   get mouseTerminalPosition(): Point {
-    return new Point(
-      Math.floor((this.inputHandler.mouse.x - this.x) / this.tileWidth),
-      Math.floor((this.inputHandler.mouse.y - this.y) / this.tileHeight)
-    );
+    return this.canvasToTerminal(this.inputHandler.mouse);
   }
 
   /**

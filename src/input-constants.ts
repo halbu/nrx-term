@@ -63,5 +63,10 @@ export class InputConstants {
   public static readonly Mouse = {
     Left: 1000,
     Right: 1001,
+    DragStatus: {
+      None: 0,
+      Active: 1,
+      Finished: 2
+    }
   };
 }
