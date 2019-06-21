@@ -9,7 +9,7 @@ export class InputHandler {
   public keyboardMap: any;
   public keysPressedThisFrame: Array<number>;
   public dragInProgress = false;
-  public dragOrigin = new Point(-1, -1);
+  public dragOrigin: Point = new Point(0, 0);
   public dragCompletedThisFrame = true;
 
   /**
@@ -45,6 +45,7 @@ export class InputHandler {
     this.cnv.addEventListener('mousedown', (e) => {
       if (e.which === 1) {
         this.keyboardMap[InputConstants.Mouse.Left] = true;
+        this.keysPressedThisFrame.push(InputConstants.Mouse.Left);
         this.dragInProgress = true;
         this.dragOrigin = this.mouse.clone();
       } else if (e.which === 3) {
@@ -56,12 +57,9 @@ export class InputHandler {
     this.cnv.addEventListener('mouseup', (e) => {
       if (e.which === 1) {
         this.keyboardMap[InputConstants.Mouse.Left] = false;
+        this.keysPressedThisFrame.push(InputConstants.Mouse.ReleaseLeft);
         if (this.isActiveDrag()) {
           this.dragCompletedThisFrame = true;
-        } else {
-          // Fire left mouse click event only on mouseup, as it is only at this point that we can distinguish the user's
-          // intention between a mouse-drag and a simple click.
-          this.keysPressedThisFrame.push(InputConstants.Mouse.Left);
         }
         this.dragInProgress = false;
       } else if (e.which === 3) {
