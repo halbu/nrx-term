@@ -61,14 +61,18 @@ export class InputConstants {
 
   // tslint:disable-next-line:variable-name
   public static readonly Mouse = {
-    Left: 1000,
-    Right: 1001,
-    ReleaseLeft: 2000,
-    ReleaseRight: 2001,
+    Left: {
+      Down: 1000,
+      Up: 2000
+    },
+    Right: {
+      Down: 1001,
+      Up: 2001
+    },
     DragStatus: {
-      None: 0,
-      Active: 1,
-      Finished: 2
+      None: 3000,
+      Active: 3001,
+      Finished: 3002
     }
   };
 }

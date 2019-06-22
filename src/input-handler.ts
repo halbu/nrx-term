@@ -7,7 +7,7 @@ export class InputHandler {
   public mouseMovedThisFrame: boolean;
   // tslint:disable-next-line:no-any
   public keyboardMap: any;
-  public keysPressedThisFrame: Array<number>;
+  public inputsThisFrame: Array<number>;
   public dragInProgress = false;
   public dragOrigin: Point = new Point(0, 0);
   public dragCompletedThisFrame = true;
@@ -20,7 +20,7 @@ export class InputHandler {
     this.mouse = new Point(0, 0);
     this.mouseMovedThisFrame = false;
     this.keyboardMap = {};
-    this.keysPressedThisFrame = new Array<number>();
+    this.inputsThisFrame = new Array<number>();
 
     this.attachListeners();
   }
@@ -35,7 +35,7 @@ export class InputHandler {
         e.preventDefault();
       }
       this.keyboardMap[e.keyCode] = true;
-      this.keysPressedThisFrame.push(e.keyCode);
+      this.inputsThisFrame.push(e.keyCode);
     };
 
     window.onkeyup = (e) => {
@@ -44,26 +44,27 @@ export class InputHandler {
 
     this.cnv.addEventListener('mousedown', (e) => {
       if (e.which === 1) {
-        this.keyboardMap[InputConstants.Mouse.Left] = true;
-        this.keysPressedThisFrame.push(InputConstants.Mouse.Left);
+        this.keyboardMap[InputConstants.Mouse.Left.Down] = true;
+        this.inputsThisFrame.push(InputConstants.Mouse.Left.Down);
         this.dragInProgress = true;
         this.dragOrigin = this.mouse.clone();
       } else if (e.which === 3) {
-        this.keyboardMap[InputConstants.Mouse.Right] = true;
-        this.keysPressedThisFrame.push(InputConstants.Mouse.Right);
+        this.keyboardMap[InputConstants.Mouse.Right.Down] = true;
+        this.inputsThisFrame.push(InputConstants.Mouse.Right.Down);
       }
     }, false);
 
     this.cnv.addEventListener('mouseup', (e) => {
       if (e.which === 1) {
-        this.keyboardMap[InputConstants.Mouse.Left] = false;
-        this.keysPressedThisFrame.push(InputConstants.Mouse.ReleaseLeft);
+        this.keyboardMap[InputConstants.Mouse.Left.Down] = false;
+        this.inputsThisFrame.push(InputConstants.Mouse.Left.Up);
         if (this.isActiveDrag()) {
           this.dragCompletedThisFrame = true;
         }
         this.dragInProgress = false;
       } else if (e.which === 3) {
-        this.keyboardMap[InputConstants.Mouse.Right] = false;
+        this.inputsThisFrame.push(InputConstants.Mouse.Right.Up);
+        this.keyboardMap[InputConstants.Mouse.Right.Down] = false;
       }
     }, false);
 

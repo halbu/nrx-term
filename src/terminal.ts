@@ -335,27 +335,27 @@ export class NRXTerm {
    */
   public nextFrame(): void {
     this.inputHandler.mouseMovedThisFrame = false;
-    this.inputHandler.keysPressedThisFrame = new Array<number>();
+    this.inputHandler.inputsThisFrame = new Array<number>();
     this.inputHandler.dragCompletedThisFrame = false;
   }
 
   /**
-   * Returns true if the specified keycode (or 1000/1001 for left/right mouse buttons) is found in the array of
-   * keycodes which represents keys pressed this frame.
-   * @param  {number} keycode The JavaScript event keycode of the key in question
+   * Returns true if the specified keycode (or left/right mouse up/down codes) is found in the array of constants which
+   * represent inputs registered this frame.
+   * @param  {number} keycode The JavaScript event keycode of the key or mouse button in question
    * @returns boolean
    */
-  public isKeyDown(keycode: number): boolean {
-    return this.keypresses.includes(keycode);
+  public inputThisFrame(keycode: number): boolean {
+    return this.inputs.includes(keycode);
   }
 
   /**
-   * Returns the event keycode of the key pressed this frame, or if a mouse button has been clicked, either 1000 (left
-   * mouse button) or 1001 (right mouse button). Returns -1 if neither any key nor any mouse button has been pressed.
-   * @returns number
+   * Returns an array of numbers, representing a complete collection of keycodes for keydown, mousedown and mouseup
+   * events that have occurred this frame.
+   * @returns Array
    */
-  get keypresses(): Array<number> {
-    return this.inputHandler.keysPressedThisFrame;
+  get inputs(): Array<number> {
+    return this.inputHandler.inputsThisFrame;
   }
 
   /**
@@ -399,14 +399,14 @@ export class NRXTerm {
    * action is currently in progress.
    * @returns [Point, Point] | null
    */
-  get dragPoints(): [Point, Point] | null {
+  get dragPoints(): [Point, Point] {
     if (this.dragStatus !== InputConstants.Mouse.DragStatus.None) {
       return [
         this.canvasToTerminal(this.inputHandler.dragOrigin),
         this.canvasToTerminal(this.inputHandler.mouse)
       ];
     } else {
-      return null;
+      return [new Point(-1, -1), new Point(-1, -1)];
     }
   }
 
@@ -435,9 +435,10 @@ export class NRXTerm {
   }
 
   /**
-   * Returns a JavaScript object literal containing constant values for all mouse buttons and keyboard keys, organised
-   * under the two subheadings Input.Mouse and Input.Keys. To be used in (if desired!) place of integer keycodes by
-   * dependent applications when checking the state of a particular mouse button or keyboard key.
+   * Returns a JavaScript object literal containing constant values for all keyboard keys, mouse buttons, and mouse
+   * actions, organised under the two subheadings Input.Mouse and Input.Keys. To be used in (if desired!) place of
+   * integer keycodes by dependent applications when checking the state of a particular mouse button, action, or
+   * keyboard key.
    * @returns any
    */
   // tslint:disable-next-line:no-any
