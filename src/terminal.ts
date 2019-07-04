@@ -21,6 +21,7 @@ export class NRXTerm {
 
   private _bgCtx: CanvasRenderingContext2D;
   private _fgCtx: CanvasRenderingContext2D;
+  private _glCtx: WebGLRenderingContext;
 
   private inputHandler: InputHandler;
   private terminalRenderer: TerminalRenderer;
@@ -44,17 +45,21 @@ export class NRXTerm {
     fontSize: number, tileWidth: number, tileHeight: number) {
     let pixelWidth = w * tileWidth;
     let pixelHeight = h * tileHeight;
-
+    el.insertAdjacentHTML('beforeend', '<canvas id="webGlCanvas" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
     el.insertAdjacentHTML('beforeend', '<canvas id="nrxBackgroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
     el.insertAdjacentHTML('beforeend', '<canvas id="nrxForegroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
     let fgcnv = <HTMLCanvasElement> document.getElementById('nrxForegroundCanvas');
     let bgcnv = <HTMLCanvasElement> document.getElementById('nrxBackgroundCanvas');
+    let glcnv = <HTMLCanvasElement> document.getElementById('webGlCanvas');
     fgcnv.width = pixelWidth;
     fgcnv.height = pixelHeight;
     bgcnv.width = pixelWidth;
     bgcnv.height = pixelHeight;
+    glcnv.width = pixelWidth;
+    glcnv.height = pixelHeight;
     this._fgCtx = <CanvasRenderingContext2D> fgcnv.getContext('2d');
     this._bgCtx = <CanvasRenderingContext2D> bgcnv.getContext('2d');
+    this._glCtx = <WebGLRenderingContext> glcnv.getContext('webgl');
 
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
@@ -66,7 +71,7 @@ export class NRXTerm {
     this._tileHeight = tileHeight;
 
     this.assertPositionAndDimensionsAreValid();
-    this.inputHandler = new InputHandler(this._fgCtx.canvas);
+    this.inputHandler = new InputHandler(this._glCtx.canvas);
     this.terminalRenderer = new TerminalRenderer(this);
 
     this.tilemap = new Array<Array<NRXTile>>();
@@ -83,6 +88,7 @@ export class NRXTerm {
   get h(): number { return this._h; }
   get fgCtx(): CanvasRenderingContext2D { return this._fgCtx; }
   get bgCtx(): CanvasRenderingContext2D { return this._bgCtx; }
+  get glCtx(): WebGLRenderingContext { return this._glCtx; }
   get fontFamily(): string { return this._fontFamily; }
   get fontSize(): number { return this._fontSize; }
   get tileWidth(): number { return this._tileWidth; }
@@ -217,7 +223,7 @@ export class NRXTerm {
     let yOffset = 0;
     width = width || Number.MAX_VALUE;
 
-    const baseColor = color ? color : 'white';
+    const baseColor = color ? color : '#FFFFFF';
     let currentColor = baseColor;
     let isColorSwitched = false;
 

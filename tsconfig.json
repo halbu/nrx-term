@@ -6,7 +6,7 @@
     "outDir": "./lib",
     "noImplicitAny": false,
     "suppressImplicitAnyIndexErrors": true,
-    "strict": true
+    "strict": false
   },
   "include": [
     "src"

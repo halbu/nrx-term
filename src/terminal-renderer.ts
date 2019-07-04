@@ -1,4 +1,6 @@
 import { NRXTerm } from './terminal';
+import { TextCache } from './text-cache';
+import { GLRenderer } from './gl-renderer';
 
 export class TerminalRenderer {
   private terminal: NRXTerm;
@@ -13,6 +15,8 @@ export class TerminalRenderer {
   private pixels: Uint32Array;
   private tw: number;
   private th: number;
+  private textCache: TextCache;
+  private glRenderer: GLRenderer;
 
   constructor(terminal: NRXTerm) {
     this.terminal = terminal;
@@ -23,8 +27,10 @@ export class TerminalRenderer {
     this.terminal.fgCtx.textBaseline = 'top';
     this.imagedata = this.terminal.bgCtx.createImageData(this.terminal.bgCtx.canvas.width, this.terminal.bgCtx.canvas.height);
     this.pixels = new Uint32Array(this.imagedata.data.buffer);
-    this.th = this.terminal.tileWidth;
-    this.tw = this.terminal.tileHeight;
+    this.tw = this.terminal.tileWidth;
+    this.th = this.terminal.tileHeight;
+    this.textCache = new TextCache(this.terminal.fontSize, this.terminal.fontFamily, this.terminal.tileWidth, this.terminal.tileHeight);
+    this.glRenderer = new GLRenderer(this.terminal, this.textCache, this.terminal.glCtx);
   }
 
   /**
@@ -33,6 +39,8 @@ export class TerminalRenderer {
    * @returns {void}
    */
   public drawToCanvas(): void {
+    this.glRenderer.draw();
+    // console.log(this.textCache.getClipspaceOfCharacter('Q'));
     this.bgBatchDraws = 0;
     this.fgBatchDraws = 0;
     this.fgIndividualDraws = 0;
@@ -169,18 +177,7 @@ export class TerminalRenderer {
     this.fgIndividualDraws = this.foregroundIndividualDraws.length;
 
     this.drawBackgroundBatchesViaPixelArray();
-    // this.drawBackgroundBatchesFillRect();
-
-    // Another attempt at speeding things up. If less than FG_REDRAW_MODE_SWITCH_BREAKPOINT foreground cells have been
-    // changed, then the terminal will overwrite only those cells, instead of blanking the entire foreground canvas and
-    // re-rendering all the characters. This allows us to maintain 60fps when the characters displayed in the terminal
-    // are *mostly* unchanging from one frame to the next, but doesn't solve the problem of the terminal being unable to
-    // redraw every onscreen character every frame.
-    if (this.foregroundIndividualDraws.length <= this.FG_REDRAW_MODE_SWITCH_BREAKPOINT) {
-      this.updateIndividualForegroundCells();
-    } else {
-      this.drawForegroundBatches();
-    }
+    this.redrawForegroundCanvas();
   }
 
   private addBackgroundBatch(batch: any, color: string): void {
@@ -191,24 +188,23 @@ export class TerminalRenderer {
     }
   }
 
-  private updateIndividualForegroundCells(): void {
-    this.foregroundIndividualDraws.forEach(fid => {
-      this.terminal.fgCtx.clearRect(fid.x * this.tw - 1, fid.y * this.th - 1, this.tw + 2, this.th + 2);
-      this.terminal.fgCtx.fillStyle = fid.fgc;
-      this.terminal.fgCtx.fillText(fid.str, fid.x * this.tw + 1, fid.y * this.th + 1);
-    });
+  private redrawForegroundCanvas(): void {
+    for (let i = 0; i !== this.terminal.w; ++i) {
+      for (let j = 0 ; j !== this.terminal.h; ++j) {
+        const t = this.terminal.tileAt(i, j);
+        let col = this.hexToRgb(t.fgc);
+        this.glRenderer.pushclips(i, j, this.terminal.tileAt(i, j).char, col.r / 256, col.g / 256, col.b / 256);
+      }
+    }
   }
 
-  private drawForegroundBatches(): void {
-    this.terminal.fgCtx.clearRect(0, 0, 1080, 720);
-
-    for (let y = 0; y !== this.foregroundDraws.length; ++y) {
-      this.foregroundDraws[y].forEach(draw => {
-        this.fgBatchDraws++;
-        this.terminal.fgCtx.fillStyle = draw.fgc;
-        this.terminal.fgCtx.fillText(draw.str, draw.x * this.tw + 1, y * this.th + 1);
-      });
-    }
+  private hexToRgb(hex: string): any {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
   }
 
   // On Firefox and Chrome this seems to deliver a significant speedup over fillRect().
@@ -231,23 +227,5 @@ export class TerminalRenderer {
       }
     });
     this.terminal.bgCtx.putImageData(this.imagedata, 0, 0);
-  }
-
-  private drawBackgroundBatchesFillRect(): void {
-    Object.keys(this.backgroundDraws).forEach(k => {
-      let colorBatch = this.backgroundDraws[k];
-      this.terminal.bgCtx.fillStyle = k;
-
-      for (let n = 0; n !== colorBatch.length; ++n) {
-        this.bgBatchDraws++;
-        let batchRect = colorBatch[n];
-        this.terminal.bgCtx.fillRect(
-          batchRect.x * this.tw,
-          batchRect.y * this.th,
-          batchRect.w * this.tw,
-          this.th
-        );
-      }
-    });
   }
 }
