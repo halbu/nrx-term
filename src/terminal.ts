@@ -3,6 +3,7 @@ import { InputHandler } from './input-handler';
 import { Point } from './point';
 import { InputConstants } from './input-constants';
 import { TerminalRenderer } from './terminal-renderer';
+import { Color } from './color';
 
 export class NRXTerm {
   private _x: number;
@@ -191,12 +192,13 @@ export class NRXTerm {
    * @param  {string} c Color in hex to use to fill the rectangle. Defaults to black
    * @returns void
    */
-  public fillRect(x: number, y: number, w: number, h: number, c: string): void {
+  public fillRect(x: number, y: number, w: number, h: number, c?: string): void {
+    let fillCol = (c) ? Color.hexToRgb(c) : new Color(0, 0, 0);
     for (let i = 0; i !== w; ++i) {
       for (let j = 0; j !== h; ++j) {
         if (this.withinTerminal(i, j)) {
           const currentTile = this.tileAt(i + x, j + y);
-          currentTile.setBgc((c === null) ? '#000000' : c);
+          currentTile.setBgc(fillCol.r, fillCol.g, fillCol.b);
           currentTile.setChar(' ');
         }
       }
@@ -223,7 +225,8 @@ export class NRXTerm {
     let yOffset = 0;
     width = width || Number.MAX_VALUE;
 
-    const baseColor = color ? color : '#FFFFFF';
+    const baseColor = color ? Color.hexToRgb(color) : new Color(255, 255, 255);
+    
     let currentColor = baseColor;
     let isColorSwitched = false;
 
@@ -271,7 +274,7 @@ export class NRXTerm {
                 // If it's the beginning of the color directive, change color appropriately and skip the other
                 // characters that make up the color directive
                 const substr = word.substring(i + 2, i + 8);
-                currentColor = '#' + substr;
+                currentColor = Color.hexToRgb('#' + substr);
                 i += 8; // Skip past the other eight [123456] characters
                 isColorSwitched = true;
               } else {
@@ -286,7 +289,11 @@ export class NRXTerm {
                 const currentTile = this.tileAt(cx, cy);
 
                 currentTile.setChar(word[i]);
-                currentTile.setFgc(isColorSwitched ? currentColor : baseColor);
+                if (isColorSwitched) {
+                  currentTile.setFgc(currentColor.r, currentColor.g, currentColor.b);
+                } else {
+                  currentTile.setFgc(baseColor.r, baseColor.g, baseColor.b);
+                }
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
                 // terminal with characters that inherit any existing rotation on the
                 // underlying tile...

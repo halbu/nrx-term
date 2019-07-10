@@ -1,6 +1,7 @@
 import { NRXTerm } from './terminal';
 import { TextCache } from './text-cache';
 import { GLRenderer } from './gl-renderer';
+import { Color } from './color';
 
 export class TerminalRenderer {
   private terminal: NRXTerm;
@@ -81,36 +82,17 @@ export class TerminalRenderer {
     */
 
     this.backgroundDraws = new Map<string, Array<any>>();
-    this.foregroundDraws = new Array<Array<any>>();
-    this.foregroundIndividualDraws = new Array<any>();
 
     let lx = 0;   // The x position of the last tile that was added to the in-progress batch.
-    let lc = '';  // The color of the in-progress batch.
+    let lc = new Color(0, 0, 0);  // The color of the in-progress batch.
     let bgDraw: any = null; // {x: 0, y: 0, w: 0} - represents a rect of solid color to be drawn to the canvas.
-    let fgDraw: any = null; // {x: 0, fgc: '#ff00ff', str: 'Hi!'} - represents a colored string to be drawn to the canvas.
 
     for (let y = 0; y !== this.terminal.h; y++) {
       lx = -99; // Force the next comparison to lx to fail so that the batch ends (we're only trying to batch
       // draws in the x-direction, at least for now).
-      this.foregroundDraws.push(new Array<any>());
+
       for (let x = 0; x !== this.terminal.w; x++) {
         const tile = this.terminal.tileAt(x, y);
-
-        // Are we writing a foreground batch?
-        if (!fgDraw) {
-          // No. Create a new one
-          fgDraw = { x: x, fgc: tile.fgc, str: tile.char };
-        } else {
-          // Yes. Has the string to be written changed color?
-          if (tile.fgc === fgDraw.fgc) {
-            // No. Add this character to the existing batched string
-            fgDraw.str += tile.char;
-          } else {
-            // Yes. Push the existing foreground batch to the array and start a new foreground batch
-            this.foregroundDraws[y].push(fgDraw);
-            fgDraw = { x: x, fgc: tile.fgc, str: tile.char };
-          }
-        }
 
         // Does this cell's background need updating?
         if (!(tile.hasBackgroundChanged() || tile.forceRedraw)) {
@@ -133,7 +115,7 @@ export class TerminalRenderer {
             lc = tile.bgc;
           } else {
             // Yes there is. Are we attempting to draw the same color at the cell 1 to the right of the last cell?
-            if (lx === x - 1 && tile.bgc === lc) {
+            if (lx === x - 1 && tile.bgc.equals(lc)) {
               // Yes we are. Extend the width of the batch by 1 so this cell will be drawn in the same draw call.
               bgDraw.w++;
               // Increment lx by one so that the next cell will be compared with this cell
@@ -146,45 +128,25 @@ export class TerminalRenderer {
 
               // Store the x and bgc values of this cell, so that we can compare them with those of the next cell.
               lx = x;
-              lc = tile.bgc;
+              lc.clone(tile.bgc);
             }
           }
         }
-
-        // Does this cell's foreground need updating?
-        if (tile.hasForegroundChanged() || tile.forceRedraw) {
-          if (this.foregroundIndividualDraws.length > this.FG_REDRAW_MODE_SWITCH_BREAKPOINT) {
-            // Lot of foreground draws to do. Don't bother trying to batch them individually
-          } else {
-            this.foregroundIndividualDraws.push({ x: x, y: y, fgc: tile.fgc, str: tile.char });
-          }
-        }
-
-        tile.forceRedraw = false;
-        tile.uncolored = true;
-        tile.cloneTileState(); // Store the state of the tile to detect changes on next redraw
-      }
-      // Push the final foreground character batch for this terminal row to the foregroundDraws array.
-      if (fgDraw) {
-        this.foregroundDraws[y].push(fgDraw);
-        fgDraw = null;
       }
     }
 
     // We have iterated over every cell. If there are foreground or background batches in progress, finish them up
     if (bgDraw) { this.addBackgroundBatch(bgDraw, lc); }
-    if (fgDraw) { this.foregroundDraws[this.foregroundDraws.length - 1].push(fgDraw); }
-    this.fgIndividualDraws = this.foregroundIndividualDraws.length;
 
     this.drawBackgroundBatchesViaPixelArray();
     this.redrawForegroundCanvas();
   }
 
-  private addBackgroundBatch(batch: any, color: string): void {
-    if (this.backgroundDraws[color]) {
-      this.backgroundDraws[color].push(batch);
+  private addBackgroundBatch(batch: any, color: Color): void {
+    if (this.backgroundDraws[color.uq]) {
+      this.backgroundDraws[color.uq].push(batch);
     } else {
-      this.backgroundDraws[color] = [batch];
+      this.backgroundDraws[color.uq] = [batch];
     }
   }
 
@@ -192,19 +154,9 @@ export class TerminalRenderer {
     for (let i = 0; i !== this.terminal.w; ++i) {
       for (let j = 0 ; j !== this.terminal.h; ++j) {
         const t = this.terminal.tileAt(i, j);
-        let col = this.hexToRgb(t.fgc);
-        this.glRenderer.pushclips(i, j, this.terminal.tileAt(i, j).char, col.r / 256, col.g / 256, col.b / 256);
+        this.glRenderer.pushclips(i, j, t.char, t.fgc.r / 255, t.fgc.g / 255, t.fgc.b / 255);
       }
     }
-  }
-
-  private hexToRgb(hex: string): any {
-    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
   }
 
   // On Firefox and Chrome this seems to deliver a significant speedup over fillRect().

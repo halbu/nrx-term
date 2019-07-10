@@ -147,7 +147,7 @@ export class GLRenderer {
         this.verts.set(this.getverts(i, j), index);
         this.clips.set(this.textCache.getCharacterVertices('?'), index);
         let r = 1;
-        let g = 1;
+        let g = 0;
         let b = 1;
         this.fgcs.set(new Float32Array([
           r, g, b, 0,
@@ -161,26 +161,9 @@ export class GLRenderer {
     }
   }
 
-  public updateCell(x: number, y: number, c: string): void {
-    let index = (x * this.POINTS_PER_QUAD) + (y * this.terminal.h * this.POINTS_PER_QUAD);
-    this.verts.set(this.getverts(x, y), index);
-    this.clips.set(this.textCache.getCharacterVertices(c), index);
-    let r = 1;
-    let g = 1;
-    let b = 1;
-    this.fgcs.set(new Float32Array([
-      r, g, b, 0,
-      r, g, b, 0,
-      r, g, b, 0,
-      r, g, b, 0,
-      r, g, b, 0,
-      r, g, b, 0,
-    ]), index * 2);
-  }
-
-  public bindAndBuffer(data: Float32Array, buffer: WebGLBuffer): void {
+  public bindAndBuffer(data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
     this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, buffer);
-    this.glContext.bufferData(this.glContext.ARRAY_BUFFER, data, this.glContext.STATIC_DRAW);
+    this.glContext.bufferData(this.glContext.ARRAY_BUFFER, data, (arrayType ? arrayType : this.glContext.STATIC_DRAW));
   }
 
   // Enables a vertex attribute array, binds a buffer, optionally binds a texture if drawing a textured quad, and... I
@@ -196,18 +179,24 @@ export class GLRenderer {
 
   public pushclips(i: number, j: number, char: string, r: number, g: number, b: number): any {
     let index = (j * this.terminal.w * this.POINTS_PER_QUAD) + (i * this.POINTS_PER_QUAD);
+    let fgcIndex = index * 2;
     this.clips.set(this.textCache.getCharacterVertices(char), index);
-    this.fgcs.set(new Float32Array([r, g, b, 0, r, g, b, 0, r, g, b, 0, r, g, b, 0, r, g, b, 0, r, g, b, 0]), index * 2);
+    for (let n = 0; n < 24; n += 4) {
+      this.fgcs[fgcIndex + n + 0] = r;
+      this.fgcs[fgcIndex + n + 1] = g;
+      this.fgcs[fgcIndex + n + 2] = b;
+    }
   }
 
   public draw(): void {
-    this.switchProgram('FOREGROUND');
+    // this.switchProgram('FOREGROUND');
     
-    this.glContext.scissor(0, 0, this.terminal.glCtx.canvas.width, this.terminal.glCtx.canvas.height);
-    this.glContext.clearColor(0, 0, 0, 0);
-    this.glContext.clear(this.glContext.COLOR_BUFFER_BIT);
+    // this.glContext.scissor(0, 0, this.terminal.glCtx.canvas.width, this.terminal.glCtx.canvas.height);
+    // this.glContext.clearColor(0, 0, 0, 0);
+    // this.glContext.clear(this.glContext.COLOR_BUFFER_BIT);
 
     this.bindAndBuffer(this.verts, this.vertexBuffer);
+    // this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, this.vertexBuffer);
     this.bindAndBuffer(this.fgcs, this.fgcBuffer);
     this.bindAndBuffer(this.clips, this.textureBuffer);
 
