@@ -34,4 +34,12 @@ export class Lerp {
     // console.log(this.lerpCache);
     // return this.lerpCache[mapString];
   }
+
+  public static getLerpFromRgbs(ar: number, ag: number, ab: number, br: number, bg: number, bb: number, amount: number): Color {
+    let rr = ar + amount * (br - ar);
+    let rg = ag + amount * (bg - ag);
+    let rb = ab + amount * (bb - ab);
+    
+    return new Color(rr, rg, rb);
+  }
 }

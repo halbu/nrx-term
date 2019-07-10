@@ -4,15 +4,19 @@ import { NRXTerm } from './terminal';
 export class GLRenderer {
   private terminal: NRXTerm;
   private textCache: TextCache;
-  private glContext: WebGLRenderingContext;
+  private glFgContext: WebGLRenderingContext;
+  private glBgContext: WebGLRenderingContext;
   private textureProgram: WebGLProgram;
   private rectProgram: WebGLProgram;
   private vloc: number;
   private tloc: number;
   private cloc: number;
+  private bgvloc: number;
+  private bgcloc: number;
   private textureAtlas: WebGLTexture;
 
-  private vertexBuffer: WebGLBuffer;
+  private fgVertexBuffer: WebGLBuffer;
+  private bgVertexBuffer: WebGLBuffer;
   private textureBuffer: WebGLBuffer;
   private fgcBuffer: WebGLBuffer;
   private bgcBuffer: WebGLBuffer;
@@ -45,7 +49,7 @@ export class GLRenderer {
     'uniform sampler2D sampler0;' +
     'void main(void){' +
     //"  gl_FragColor = fCol + texture2D(sampler0, vTex);" +
-    '  gl_FragColor = fCol + texture2D(sampler0, vTex);' +
+    '  gl_FragColor = vec4(fCol.x, fCol.y, fCol.z, texture2D(sampler0, vTex).w);' +
     '}';
 
   // create shaders
@@ -65,10 +69,11 @@ export class GLRenderer {
     '  gl_FragColor = fCol;' +
     '}';
 
-  constructor(terminal: NRXTerm, textCache: TextCache, glContext: WebGLRenderingContext) {
+  constructor(terminal: NRXTerm, textCache: TextCache, glFgcContext: WebGLRenderingContext, glBgcContext: WebGLRenderingContext) {
     this.terminal = terminal;
     this.textCache = textCache;
-    this.glContext = glContext;
+    this.glFgContext = glFgcContext;
+    this.glBgContext = glBgcContext;
     this.setupShaders();
 
     this.tsize = this.terminal.w * this.terminal.h * this.POINTS_PER_QUAD;
@@ -77,67 +82,80 @@ export class GLRenderer {
     this.fgcs = new Float32Array(this.tsize * 2);
     this.bgcs = new Float32Array(this.tsize * 2);
 
-    this.vertexBuffer = this.glContext.createBuffer();
-    this.textureBuffer = this.glContext.createBuffer();
-    this.fgcBuffer = this.glContext.createBuffer();
-    this.bgcBuffer = this.glContext.createBuffer();
+    this.fgVertexBuffer = this.glFgContext.createBuffer();
+    this.bgVertexBuffer = this.glBgContext.createBuffer();
+    this.textureBuffer = this.glFgContext.createBuffer();
+    this.fgcBuffer = this.glFgContext.createBuffer();
+    this.bgcBuffer = this.glBgContext.createBuffer();
 
     this.firstRunSetup();
   }
 
   private setupShaders(): void {
-    let vertShaderObj = this.glContext.createShader(this.glContext.VERTEX_SHADER);
-    let fragShaderObj = this.glContext.createShader(this.glContext.FRAGMENT_SHADER);
-    this.glContext.shaderSource(vertShaderObj, this.vertexShaderSrc);
-    this.glContext.shaderSource(fragShaderObj, this.fragmentShaderSrc);
-    this.glContext.compileShader(vertShaderObj);
-    this.glContext.compileShader(fragShaderObj);
 
-    this.textureProgram = <WebGLProgram> this.glContext.createProgram();
-    this.glContext.attachShader(this.textureProgram, vertShaderObj);
-    this.glContext.attachShader(this.textureProgram, fragShaderObj);
-    this.glContext.linkProgram(this.textureProgram);
-    this.glContext.useProgram(this.textureProgram);
+    // Foreground canvas, shaders, etc
 
-    let vertRectShaderObj = this.glContext.createShader(this.glContext.VERTEX_SHADER);
-    let fragRectShaderObj = this.glContext.createShader(this.glContext.FRAGMENT_SHADER);
-    this.glContext.shaderSource(vertRectShaderObj, this.vertexRectShaderSrc);
-    this.glContext.shaderSource(fragRectShaderObj, this.fragmentRectShaderSrc);
-    this.glContext.compileShader(vertRectShaderObj);
-    this.glContext.compileShader(fragRectShaderObj);
+    let vertShaderObj = this.glFgContext.createShader(this.glFgContext.VERTEX_SHADER);
+    let fragShaderObj = this.glFgContext.createShader(this.glFgContext.FRAGMENT_SHADER);
+    this.glFgContext.shaderSource(vertShaderObj, this.vertexShaderSrc);
+    this.glFgContext.shaderSource(fragShaderObj, this.fragmentShaderSrc);
+    this.glFgContext.compileShader(vertShaderObj);
+    this.glFgContext.compileShader(fragShaderObj);
 
-    this.rectProgram = <WebGLProgram> this.glContext.createProgram();
-    this.glContext.attachShader(this.rectProgram, vertShaderObj);
-    this.glContext.attachShader(this.rectProgram, fragShaderObj);
-    this.glContext.linkProgram(this.rectProgram);
-    this.glContext.useProgram(this.rectProgram);
+    this.textureProgram = <WebGLProgram> this.glFgContext.createProgram();
+    this.glFgContext.attachShader(this.textureProgram, vertShaderObj);
+    this.glFgContext.attachShader(this.textureProgram, fragShaderObj);
+    this.glFgContext.linkProgram(this.textureProgram);
+    this.glFgContext.useProgram(this.textureProgram);
 
-    this.vloc = this.glContext.getAttribLocation(this.textureProgram, 'aVertex');
-    this.tloc = this.glContext.getAttribLocation(this.textureProgram, 'aUV');
-    this.cloc = this.glContext.getAttribLocation(this.textureProgram, 'fragColor');
+    let vertRectShaderObj = this.glFgContext.createShader(this.glFgContext.VERTEX_SHADER);
+    let fragRectShaderObj = this.glFgContext.createShader(this.glFgContext.FRAGMENT_SHADER);
+    this.glFgContext.shaderSource(vertRectShaderObj, this.vertexRectShaderSrc);
+    this.glFgContext.shaderSource(fragRectShaderObj, this.fragmentRectShaderSrc);
+    this.glFgContext.compileShader(vertRectShaderObj);
+    this.glFgContext.compileShader(fragRectShaderObj);
 
-    this.glContext.viewport(0, 0, this.terminal.glCtx.canvas.width, this.terminal.glCtx.canvas.height);
+    this.textureAtlas = <WebGLTexture> this.glFgContext.createTexture();
+    this.glFgContext.bindTexture(this.glFgContext.TEXTURE_2D, this.textureAtlas);
+    this.glFgContext.pixelStorei(this.glFgContext.UNPACK_FLIP_Y_WEBGL, 1);
+    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MIN_FILTER, this.glFgContext.NEAREST);
+    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MAG_FILTER, this.glFgContext.NEAREST);
+    this.glFgContext.texImage2D(this.glFgContext.TEXTURE_2D, 0, this.glFgContext.RGBA, this.glFgContext.RGBA, this.glFgContext.UNSIGNED_BYTE, this.textCache.canvas);
 
-    this.textureAtlas = <WebGLTexture> this.glContext.createTexture();
-    this.glContext.bindTexture(this.glContext.TEXTURE_2D, this.textureAtlas);
-    this.glContext.pixelStorei(this.glContext.UNPACK_FLIP_Y_WEBGL, 1);
-    let gl = this.glContext;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    this.glContext.texImage2D(this.glContext.TEXTURE_2D, 0, this.glContext.RGBA, this.glContext.RGBA, this.glContext.UNSIGNED_BYTE, this.textCache.canvas);
+    this.glFgContext.enable(this.glFgContext.BLEND);
+    this.glFgContext.blendFunc(this.glFgContext.CONSTANT_COLOR, this.glFgContext.SRC_ALPHA);
+    this.glFgContext.blendFuncSeparate(this.glFgContext.SRC_ALPHA, this.glFgContext.ONE_MINUS_SRC_ALPHA, this.glFgContext.ONE, this.glFgContext.ZERO);
+    
+    this.glFgContext.useProgram(this.textureProgram);
 
-    this.glContext.enable(this.glContext.BLEND);
-    this.glContext.blendFunc(this.glContext.SRC_ALPHA, this.glContext.ONE_MINUS_SRC_ALPHA);
+    // Background canvas, shaders, etc
+
+    let vertShaderObjBg = this.glBgContext.createShader(this.glBgContext.VERTEX_SHADER);
+    let fragShaderObjBg = this.glBgContext.createShader(this.glBgContext.FRAGMENT_SHADER);
+    this.glBgContext.shaderSource(vertShaderObjBg, this.vertexRectShaderSrc);
+    this.glBgContext.shaderSource(fragShaderObjBg, this.fragmentRectShaderSrc);
+    this.glBgContext.compileShader(vertShaderObjBg);
+    this.glBgContext.compileShader(fragShaderObjBg);
+
+    this.rectProgram = <WebGLProgram> this.glBgContext.createProgram();
+    this.glBgContext.attachShader(this.rectProgram, vertShaderObjBg);
+    this.glBgContext.attachShader(this.rectProgram, fragShaderObjBg);
+    this.glBgContext.linkProgram(this.rectProgram);
+    this.glBgContext.useProgram(this.rectProgram);
+
+    // Both
+
+    this.vloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aVertex');
+    this.tloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aUV');
+    this.cloc = this.glFgContext.getAttribLocation(this.textureProgram, 'fragColor');
+
+    this.bgvloc = this.glBgContext.getAttribLocation(this.rectProgram, 'aVertex');
+    this.bgcloc = this.glBgContext.getAttribLocation(this.rectProgram, 'fragColor');
+
+    this.glFgContext.viewport(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
+    this.glBgContext.viewport(0, 0, this.terminal.glBgCtx.canvas.width, this.terminal.glBgCtx.canvas.height);
 
     console.log('WebGL Rendering context set up correctly and texture loaded from text canvas.');
-  }
-
-  public switchProgram(str: string): void {
-    if (str === 'BACKGROUND') {
-      this.glContext.useProgram(this.rectProgram);
-    } else if (str === 'FOREGROUND') {
-      this.glContext.useProgram(this.textureProgram);
-    }
   }
 
   public firstRunSetup(): void {
@@ -157,27 +175,35 @@ export class GLRenderer {
           r, g, b, 0,
           r, g, b, 0,
         ]), index * 2);
+        this.bgcs.set(new Float32Array([
+          1, 1, 0, 0,
+          1, 1, 0, 0,
+          1, 1, 0, 0,
+          1, 1, 0, 0,
+          1, 1, 0, 0,
+          1, 1, 0, 0,
+        ]), index * 2);
       }
     }
   }
 
   public bindAndBuffer(data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
-    this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, buffer);
-    this.glContext.bufferData(this.glContext.ARRAY_BUFFER, data, (arrayType ? arrayType : this.glContext.STATIC_DRAW));
+    this.glFgContext.bindBuffer(this.glFgContext.ARRAY_BUFFER, buffer);
+    this.glFgContext.bufferData(this.glFgContext.ARRAY_BUFFER, data, (arrayType ? arrayType : this.glFgContext.STATIC_DRAW));
   }
 
   // Enables a vertex attribute array, binds a buffer, optionally binds a texture if drawing a textured quad, and... I
   // honestly don't know enough about how WebGL works to write a coherent comment here explaining what is happening
   public enableVertexArray(attribPointer: number, buffer: WebGLBuffer, step: number, texture?: WebGLTexture): void {
-    this.glContext.enableVertexAttribArray(attribPointer);
-    this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, buffer);
+    this.glFgContext.enableVertexAttribArray(attribPointer);
+    this.glFgContext.bindBuffer(this.glFgContext.ARRAY_BUFFER, buffer);
     if (texture) {
-      this.glContext.bindTexture(this.glContext.TEXTURE_2D, texture);
+      this.glFgContext.bindTexture(this.glFgContext.TEXTURE_2D, texture);
     }
-    this.glContext.vertexAttribPointer(attribPointer, step, this.glContext.FLOAT, false, 0, 0);
+    this.glFgContext.vertexAttribPointer(attribPointer, step, this.glFgContext.FLOAT, false, 0, 0);
   }
 
-  public pushclips(i: number, j: number, char: string, r: number, g: number, b: number): any {
+  public pushForegroundCharacterAndColorData(i: number, j: number, char: string, r: number, g: number, b: number): any {
     let index = (j * this.terminal.w * this.POINTS_PER_QUAD) + (i * this.POINTS_PER_QUAD);
     let fgcIndex = index * 2;
     this.clips.set(this.textCache.getCharacterVertices(char), index);
@@ -188,23 +214,58 @@ export class GLRenderer {
     }
   }
 
+  public pushBackgroundColorData(i: number, j: number, r: number, g: number, b: number): any {
+    let bgcIndex = (j * this.terminal.w * this.POINTS_PER_QUAD) + (i * this.POINTS_PER_QUAD);
+    bgcIndex *= 2;
+    for (let n = 0; n < 24; n += 4) {
+      this.bgcs[bgcIndex + n + 0] = r;
+      this.bgcs[bgcIndex + n + 1] = g;
+      this.bgcs[bgcIndex + n + 2] = b;
+    }
+  }
+
+  public switchProgram(str: string): void {
+    if (str === 'BACKGROUND') {
+      this.glBgContext.useProgram(this.rectProgram);
+    } else if (str === 'FOREGROUND') {
+      this.glFgContext.useProgram(this.textureProgram);
+    }
+  }
+
   public draw(): void {
     // this.switchProgram('FOREGROUND');
     
-    // this.glContext.scissor(0, 0, this.terminal.glCtx.canvas.width, this.terminal.glCtx.canvas.height);
-    // this.glContext.clearColor(0, 0, 0, 0);
-    // this.glContext.clear(this.glContext.COLOR_BUFFER_BIT);
+    this.glFgContext.scissor(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
+    this.glFgContext.clearColor(0, 0, 0, 0);
+    this.glFgContext.clear(this.glFgContext.COLOR_BUFFER_BIT);
 
-    this.bindAndBuffer(this.verts, this.vertexBuffer);
+    this.bindAndBuffer(this.verts, this.fgVertexBuffer);
     // this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, this.vertexBuffer);
     this.bindAndBuffer(this.fgcs, this.fgcBuffer);
     this.bindAndBuffer(this.clips, this.textureBuffer);
 
-    this.enableVertexArray(this.vloc, this.vertexBuffer, 2);
+    this.enableVertexArray(this.vloc, this.fgVertexBuffer, 2);
     this.enableVertexArray(this.cloc, this.fgcBuffer, 4);
     this.enableVertexArray(this.tloc, this.textureBuffer, 2, this.textureAtlas);
 
-    this.glContext.drawArrays(this.glContext.TRIANGLES, 0, this.verts.length / 2);
+    this.glFgContext.drawArrays(this.glFgContext.TRIANGLES, 0, this.verts.length / 2);
+    
+    // this.switchProgram('BACKGROUND');
+    
+    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgVertexBuffer);
+    this.glBgContext.bufferData(this.glBgContext.ARRAY_BUFFER, this.verts, this.glBgContext.STATIC_DRAW);
+    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgcBuffer);
+    this.glBgContext.bufferData(this.glBgContext.ARRAY_BUFFER, this.bgcs, this.glBgContext.STATIC_DRAW);
+
+    this.glBgContext.enableVertexAttribArray(this.bgvloc);
+    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgVertexBuffer);
+    this.glBgContext.vertexAttribPointer(this.bgvloc, 2, this.glBgContext.FLOAT, false, 0, 0);
+
+    this.glBgContext.enableVertexAttribArray(this.bgcloc);
+    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgcBuffer);
+    this.glBgContext.vertexAttribPointer(this.bgcloc, 4, this.glBgContext.FLOAT, false, 0, 0);
+
+    this.glBgContext.drawArrays(this.glBgContext.TRIANGLES, 0, this.verts.length / 2);
   }
 
   public getverts(x: number, y: number): Float32Array {

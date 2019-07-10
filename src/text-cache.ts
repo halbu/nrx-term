@@ -32,7 +32,8 @@ export class TextCache {
 
     this.context.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
     this.context.textBaseline = 'top';
-    this.context.fillStyle = '#000000';
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.fillStyle = '#000000FF';
 
     this.drawAllCharactersToCanvas();
   }

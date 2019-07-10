@@ -11,48 +11,13 @@ class NRXTileState {
 }
 
 export class NRXTile {
-  private _currentTileState: NRXTileState;
-  private _previousTileState: NRXTileState;
+  private _tileState: NRXTileState;
   public uncolored: boolean; // Is there a BG color already here that we should blend?
   public forceRedraw = false; // Set true to force a one-off repaint of this tile upon next redraw of the terminal
 
   constructor() {
-    this._currentTileState = new NRXTileState();
-    this._previousTileState = new NRXTileState();
+    this._tileState = new NRXTileState();
     this.uncolored = true;
-  }
-
-  /**
-   * Stores the state of a tile, in order that we can later test to see if it requires redrawing.
-   * @returns {void}
-   */
-  public cloneTileState(): void {
-    this._previousTileState.bga = this._currentTileState.bga;
-    this._previousTileState.bgc = this._currentTileState.bgc;
-    this._previousTileState.fgc = this._currentTileState.fgc;
-    this._previousTileState.char = this._currentTileState.char;
-    this._previousTileState.rot = this._currentTileState.rot;
-  }
-
-  /**
-   * Tests to see if a tile's foreground has changed in any way (character, color, or rotation).
-   * @returns {boolean}
-   */
-  public hasForegroundChanged(): boolean {
-    if (this._currentTileState.char !== this._previousTileState.char) { return true; }
-    if (!this._currentTileState.fgc.equals(this._previousTileState.fgc)) { return true; }
-    if (this._currentTileState.rot !== this._previousTileState.rot) { return true; }
-    return false;
-  }
-
-  /**
-   * Tests to see if a tile's background has changed in any way (color or alpha).
-   * @returns {boolean}
-   */
-  public hasBackgroundChanged(): boolean {
-    if (!this._currentTileState.bgc.equals(this._previousTileState.bgc)) { return true; }
-    if (this._currentTileState.bga !== this._previousTileState.bga) { return true; }
-    return false;
   }
 
   /**
@@ -61,13 +26,13 @@ export class NRXTile {
    * @param  {number} proportion Amount to lerp, where 0 = 100% current color, 1 = 100% new color. Valid range [0 ,1].
    * @returns {void}
    */
-  public lerpBgc(newBgc: Color, proportion: number): void {
+  public lerpBgc(r: number, g: number, b: number, proportion: number): void {
     if (proportion < 0 || proportion > 1) {
       throw new Error ('Attempted to lerp the background color by a proportion (' + proportion + ') outside the ' +
         'acceptable range [0, 1].');
     }
 
-    this._currentTileState.bgc = Lerp.getLerp(newBgc, this._currentTileState.bgc, proportion);
+    this._tileState.bgc = Lerp.getLerp(new Color(r, g, b), this._tileState.bgc, proportion);
   }
 
   /**
@@ -77,35 +42,35 @@ export class NRXTile {
    * @param  {number} proportion Amount to lerp, where 0 = 100% current color, 1 = 100% new color. Valid range [0 ,1].
    * @returns {void}
    */
-  public lerpFgc(newFgc: Color, proportion: number): void {
+  public lerpFgc(r: number, g: number, b: number, proportion: number): void {
     if (proportion < 0 || proportion > 1) {
       throw new Error ('Attempted to lerp the foreground color by a proportion (' + proportion + ') outside the ' +
         'acceptable range [0, 1].');
     }
 
-    this._currentTileState.fgc = Lerp.getLerp(newFgc, this._currentTileState.fgc, proportion);
+    this._tileState.fgc = Lerp.getLerp(new Color(r, g, b), this._tileState.fgc, proportion);
   }
 
   // Methods that allow the display characteristics of the tile to be modified.
   public setFgc(r: number, g: number, b: number): void {
-    this._currentTileState.fgc.r = r;
-    this._currentTileState.fgc.g = g;
-    this._currentTileState.fgc.b = b;
+    this._tileState.fgc.r = r;
+    this._tileState.fgc.g = g;
+    this._tileState.fgc.b = b;
   }
   public setBgc(r: number, g: number, b: number): void {
-    this._currentTileState.bgc.r = r;
-    this._currentTileState.bgc.g = g;
-    this._currentTileState.bgc.b = b;
+    this._tileState.bgc.r = r;
+    this._tileState.bgc.g = g;
+    this._tileState.bgc.b = b;
   }
   // public setBgc(bgc: Color): void { this._currentTileState.bgc = bgc; }
-  public setBga(bga: number): void { this._currentTileState.bga = bga; }
-  public setChar(char: string): void { this._currentTileState.char = char; }
-  public setRot(rot: number): void { this._currentTileState.rot = rot; }
+  public setBga(bga: number): void { this._tileState.bga = bga; }
+  public setChar(char: string): void { this._tileState.char = char; }
+  public setRot(rot: number): void { this._tileState.rot = rot; }
 
   // Methods that allow the display characteristics of the tile to be modified.
-  get fgc(): Color { return this._currentTileState.fgc; }
-  get bgc(): Color { return this._currentTileState.bgc; }
-  get bga(): number { return this._currentTileState.bga; }
-  get char(): string { return this._currentTileState.char; }
-  get rot(): number { return this._currentTileState.rot; }
+  get fgc(): Color { return this._tileState.fgc; }
+  get bgc(): Color { return this._tileState.bgc; }
+  get bga(): number { return this._tileState.bga; }
+  get char(): string { return this._tileState.char; }
+  get rot(): number { return this._tileState.rot; }
 }

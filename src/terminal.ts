@@ -20,9 +20,8 @@ export class NRXTerm {
 
   private tilemap: Array<Array<NRXTile>>;
 
-  private _bgCtx: CanvasRenderingContext2D;
-  private _fgCtx: CanvasRenderingContext2D;
-  private _glCtx: WebGLRenderingContext;
+  private _glFgCtx: WebGLRenderingContext;
+  private _glBgCtx: WebGLRenderingContext;
 
   private inputHandler: InputHandler;
   private terminalRenderer: TerminalRenderer;
@@ -46,21 +45,16 @@ export class NRXTerm {
     fontSize: number, tileWidth: number, tileHeight: number) {
     let pixelWidth = w * tileWidth;
     let pixelHeight = h * tileHeight;
-    el.insertAdjacentHTML('beforeend', '<canvas id="webGlCanvas" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
-    el.insertAdjacentHTML('beforeend', '<canvas id="nrxBackgroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
-    el.insertAdjacentHTML('beforeend', '<canvas id="nrxForegroundCanvas" style="position: absolute; left: 0; top: 0; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
-    let fgcnv = <HTMLCanvasElement> document.getElementById('nrxForegroundCanvas');
-    let bgcnv = <HTMLCanvasElement> document.getElementById('nrxBackgroundCanvas');
-    let glcnv = <HTMLCanvasElement> document.getElementById('webGlCanvas');
-    fgcnv.width = pixelWidth;
-    fgcnv.height = pixelHeight;
-    bgcnv.width = pixelWidth;
-    bgcnv.height = pixelHeight;
-    glcnv.width = pixelWidth;
-    glcnv.height = pixelHeight;
-    this._fgCtx = <CanvasRenderingContext2D> fgcnv.getContext('2d');
-    this._bgCtx = <CanvasRenderingContext2D> bgcnv.getContext('2d');
-    this._glCtx = <WebGLRenderingContext> glcnv.getContext('webgl');
+    el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
+    el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
+    let glFgCnv = <HTMLCanvasElement> document.getElementById('glBgCtx');
+    let glBgCnv = <HTMLCanvasElement> document.getElementById('glFgCtx');
+    glFgCnv.width = pixelWidth;
+    glFgCnv.height = pixelHeight;
+    glBgCnv.width = pixelWidth;
+    glBgCnv.height = pixelHeight;
+    this._glFgCtx = <WebGLRenderingContext> glFgCnv.getContext('webgl');
+    this._glBgCtx = <WebGLRenderingContext> glBgCnv.getContext('webgl');
 
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
@@ -71,15 +65,11 @@ export class NRXTerm {
     this._tileWidth = tileWidth;
     this._tileHeight = tileHeight;
 
-    this.assertPositionAndDimensionsAreValid();
-    this.inputHandler = new InputHandler(this._glCtx.canvas);
+    this.inputHandler = new InputHandler(this._glFgCtx.canvas);
     this.terminalRenderer = new TerminalRenderer(this);
 
     this.tilemap = new Array<Array<NRXTile>>();
     this.initialiseTiles();
-
-    this._fgCtx.imageSmoothingEnabled = false;
-    this._bgCtx.imageSmoothingEnabled = false;
   }
 
   // Getters/setters for private members
@@ -87,17 +77,12 @@ export class NRXTerm {
   get y(): number { return this._y; }
   get w(): number { return this._w; }
   get h(): number { return this._h; }
-  get fgCtx(): CanvasRenderingContext2D { return this._fgCtx; }
-  get bgCtx(): CanvasRenderingContext2D { return this._bgCtx; }
-  get glCtx(): WebGLRenderingContext { return this._glCtx; }
+  get glFgCtx(): WebGLRenderingContext { return this._glFgCtx; }
+  get glBgCtx(): WebGLRenderingContext { return this._glBgCtx; }
   get fontFamily(): string { return this._fontFamily; }
   get fontSize(): number { return this._fontSize; }
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
-
-  get fgIndividualDrawsThisFrame(): number { return this.terminalRenderer.fgIndividualDraws; }  // Stats that
-  get fgBatchDrawsThisFrame(): number { return this.terminalRenderer.fgBatchDraws; }  // the parent app can
-  get bgBatchDrawsThisFrame(): number { return this.terminalRenderer.bgBatchDraws; }  // monitor if desired
 
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 
@@ -129,23 +114,6 @@ export class NRXTerm {
     this._w = w;
     this._h = h;
     this.initialiseTiles();
-    this.assertPositionAndDimensionsAreValid();
-  }
-
-  /**
-   * Sanity check, throws an error if any part of the terminal is outside the bounds of the canvas.
-   * @returns void
-   */
-  public assertPositionAndDimensionsAreValid(): void {
-    if (
-      this.x + this.w * this._tileWidth > this._fgCtx.canvas.width ||
-      this.y + this.h * this._tileHeight > this._fgCtx.canvas.height ||
-      this.x < 0 ||
-      this.y < 0
-    ) {
-      throw new Error('A terminal has been instantiated with dimensions such that it'
-        + ' would attempt to draw outside the boundaries of its parent canvas.');
-    }
   }
 
   /**
