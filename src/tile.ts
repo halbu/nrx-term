@@ -6,7 +6,7 @@ class NRXTileState {
   public char = '?';
   public fgc = new Color(255, 0, 255);
   public bgc = new Color(255, 0, 255);
-  public bga = 1.0;
+  public bga = 0.0;
   public rot = 0;
 }
 
@@ -32,7 +32,7 @@ export class NRXTile {
         'acceptable range [0, 1].');
     }
 
-    this._tileState.bgc = Lerp.getLerp(new Color(r, g, b), this._tileState.bgc, proportion);
+    this._tileState.bgc = Lerp.lerpColor(new Color(r, g, b), this._tileState.bgc, proportion);
   }
 
   /**
@@ -48,7 +48,7 @@ export class NRXTile {
         'acceptable range [0, 1].');
     }
 
-    this._tileState.fgc = Lerp.getLerp(new Color(r, g, b), this._tileState.fgc, proportion);
+    this._tileState.fgc = Lerp.lerpColor(new Color(r, g, b), this._tileState.fgc, proportion);
   }
 
   // Methods that allow the display characteristics of the tile to be modified.

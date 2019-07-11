@@ -24,6 +24,7 @@ export class TerminalRenderer {
         const t = this.terminal.tileAt(i, j);
         this.glRenderer.pushForegroundCharacterAndColorData(i, j, t.char, t.fgc.r / 255, t.fgc.g / 255, t.fgc.b / 255);
         this.glRenderer.pushBackgroundColorData(i, j, t.bgc.r / 255, t.bgc.g / 255, t.bgc.b / 255);
+        t.setBga(0.0);
       }
     }
     this.glRenderer.draw();
