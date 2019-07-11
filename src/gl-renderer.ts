@@ -11,6 +11,9 @@ export class GLRenderer {
   private vloc: number;
   private tloc: number;
   private cloc: number;
+  private rloc: WebGLUniformLocation;
+  private mloc: WebGLUniformLocation;
+  private ploc: WebGLUniformLocation;
   private bgvloc: number;
   private bgcloc: number;
   private textureAtlas: WebGLTexture;
@@ -36,7 +39,14 @@ export class GLRenderer {
     'attribute vec4 fragColor;' +
     'varying vec2 vTex;' +
     'varying vec4 fCol;' +
+    'uniform vec2 u_rotation;' +
+    'uniform mat3 m_rotation;' +
+    'uniform mat3 m_projection;' +
     'void main(void) {' +
+    // '  vec2 rotatedPosition = vec2(aVertex.x + u_rotation.x, aVertex.y + u_rotation.y);' +
+    // '  vec2 rotatedPosition = vec2(aVertex.x * u_rotation.y + aVertex.y * u_rotation.x, aVertex.y * u_rotation.y - aVertex.x * u_rotation.x);' +
+    // '  vec3 bigmatrix = m_rotation * m_projection;' +
+    // '  vec2 position = (bigmatrix * vec3(aVertex, 1)).xy;' +
     '  gl_Position = vec4(aVertex, 0.0, 1.0);' +
     '  vTex = aUV;' +
     '  fCol = fragColor;' +
@@ -148,6 +158,9 @@ export class GLRenderer {
     this.vloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aVertex');
     this.tloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aUV');
     this.cloc = this.glFgContext.getAttribLocation(this.textureProgram, 'fragColor');
+    this.rloc = this.glFgContext.getUniformLocation(this.textureProgram, 'u_rotation');
+    this.mloc = this.glFgContext.getUniformLocation(this.textureProgram, 'm_rotation');
+    this.ploc = this.glFgContext.getUniformLocation(this.textureProgram, 'm_projection');
 
     this.bgvloc = this.glBgContext.getAttribLocation(this.rectProgram, 'aVertex');
     this.bgcloc = this.glBgContext.getAttribLocation(this.rectProgram, 'fragColor');
@@ -156,6 +169,67 @@ export class GLRenderer {
     this.glBgContext.viewport(0, 0, this.terminal.glBgCtx.canvas.width, this.terminal.glBgCtx.canvas.height);
 
     console.log('WebGL Rendering context set up correctly and texture loaded from text canvas.');
+  }
+
+  public translation(tx: number, ty: number): number[] {
+    return [
+      1, 0, 0,
+      0, 1, 0,
+      tx, ty, 1,
+    ];
+  }
+  
+  public rotation(angleInRadians: number): number[] {
+    // let c = Math.cos(angleInRadians);
+    // let s = Math.sin(angleInRadians);
+    let c = Math.cos(angleInRadians);
+    let s = Math.sin(angleInRadians);
+    return [
+      c, -s, 0,
+      s, c, 0,
+      0, 0, 1,
+    ];
+  }
+  
+  public projection(width: number, height: number): number[] {
+    // Note: This matrix flips the Y axis so that 0 is at the top.
+    return [
+      2 / width, 0, 0,
+      0, -2 / height, 0,
+      -1, 1, 1
+    ];
+  }
+
+  public multiply(a: number[], b: number[]): number[] {
+    const a00 = a[0 * 3 + 0];
+    const a01 = a[0 * 3 + 1];
+    const a02 = a[0 * 3 + 2];
+    const a10 = a[1 * 3 + 0];
+    const a11 = a[1 * 3 + 1];
+    const a12 = a[1 * 3 + 2];
+    const a20 = a[2 * 3 + 0];
+    const a21 = a[2 * 3 + 1];
+    const a22 = a[2 * 3 + 2];
+    const b00 = b[0 * 3 + 0];
+    const b01 = b[0 * 3 + 1];
+    const b02 = b[0 * 3 + 2];
+    const b10 = b[1 * 3 + 0];
+    const b11 = b[1 * 3 + 1];
+    const b12 = b[1 * 3 + 2];
+    const b20 = b[2 * 3 + 0];
+    const b21 = b[2 * 3 + 1];
+    const b22 = b[2 * 3 + 2];
+    return [
+      b00 * a00 + b01 * a10 + b02 * a20,
+      b00 * a01 + b01 * a11 + b02 * a21,
+      b00 * a02 + b01 * a12 + b02 * a22,
+      b10 * a00 + b11 * a10 + b12 * a20,
+      b10 * a01 + b11 * a11 + b12 * a21,
+      b10 * a02 + b11 * a12 + b12 * a22,
+      b20 * a00 + b21 * a10 + b22 * a20,
+      b20 * a01 + b21 * a11 + b22 * a21,
+      b20 * a02 + b21 * a12 + b22 * a22,
+    ];
   }
 
   public firstRunSetup(): void {
@@ -238,6 +312,14 @@ export class GLRenderer {
     this.glFgContext.scissor(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
     this.glFgContext.clearColor(0, 0, 0, 0);
     this.glFgContext.clear(this.glFgContext.COLOR_BUFFER_BIT);
+    
+    let w = (2 / this.terminal.w);
+    let h = (2 / this.terminal.h);
+    
+    this.glFgContext.uniform2fv(this.rloc, [w / 2, h / 2]);
+    
+    this.glFgContext.uniformMatrix3fv(this.mloc, false, this.rotation(Math.PI));
+    this.glFgContext.uniformMatrix3fv(this.ploc, false, this.projection(this.glFgContext.canvas.width, this.glFgContext.canvas.height));
 
     this.bindAndBuffer(this.verts, this.fgVertexBuffer);
     // this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, this.vertexBuffer);
