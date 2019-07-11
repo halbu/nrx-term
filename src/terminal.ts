@@ -41,18 +41,22 @@ export class NRXTerm {
    * @param  {number} tileWidth The width of a terminal tile, in pixels
    * @param  {number} tileHeight The height of a terminal tile, in pixels
    */
-  constructor(el: HTMLElement, x: number, y: number, w: number, h: number, fontFamily: string,
-    fontSize: number, tileWidth: number, tileHeight: number) {
-    let pixelWidth = w * tileWidth;
-    let pixelHeight = h * tileHeight;
+  constructor(el: HTMLElement, x: number, y: number, w: number, h: number,
+    fontFamily: string, fontSize: number, tileWidth: number, tileHeight: number) {
+
+    const pixelWidth = w * tileWidth;
+    const pixelHeight = h * tileHeight;
+
     el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
     el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
     let glFgCnv = <HTMLCanvasElement> document.getElementById('glBgCtx');
     let glBgCnv = <HTMLCanvasElement> document.getElementById('glFgCtx');
-    glFgCnv.width = pixelWidth;
-    glFgCnv.height = pixelHeight;
-    glBgCnv.width = pixelWidth;
-    glBgCnv.height = pixelHeight;
+
+    [glFgCnv, glBgCnv].forEach(c => {
+      c.width = pixelWidth;
+      c.height = pixelHeight;
+    });
+
     this._glFgCtx = <WebGLRenderingContext> glFgCnv.getContext('webgl');
     this._glBgCtx = <WebGLRenderingContext> glBgCnv.getContext('webgl');
 
@@ -98,22 +102,6 @@ export class NRXTerm {
         this.tilemap[i][j] = new NRXTile();
       }
     }
-  }
-
-  /**
-   * Resizes and repositions the terminal within the canvas.
-   * @param  {number} x The X position of the terminal within the canvas (pixels from left edge)
-   * @param  {number} y The Y position of the terminal within the canvas (pixels from top edge)
-   * @param  {number} w The width of the terminal, specified in terminal cells
-   * @param  {number} h The height of the terminal, specified in terminal cells
-   * @returns void
-   */
-  public resize(x: number, y: number, w: number, h: number): void {
-    this._x = x;
-    this._y = y;
-    this._w = w;
-    this._h = h;
-    this.initialiseTiles();
   }
 
   /**
@@ -194,7 +182,7 @@ export class NRXTerm {
     width = width || Number.MAX_VALUE;
 
     const baseColor = color ? Color.hexToRgb(color) : new Color(255, 255, 255);
-    
+
     let currentColor = baseColor;
     let isColorSwitched = false;
 
