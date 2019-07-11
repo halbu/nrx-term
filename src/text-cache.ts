@@ -7,38 +7,41 @@ export class TextCache {
   private tileHeight: number;
   private clipMap: Map<string, Float32Array>;
   private allChars = ' \'•·~`ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽabcčćdđefghijklmnopqrsštuvwxyzžАБВГҐДЂЕЁЄЖЗЅИІЇЙЈКЛЉМНЊОПРСТЋУЎФХЦЧЏШЩЪЫЬЭЮЯабвгґдђеёєжзѕиіїйјклљмнњопрстћуўфхцчџшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω1234567890‘?’“!”"`(%)[#]{@}/&\<-+÷×=>®©$€£¥¢:;,.*';
-  private clipspaceConversionFactor: number;
   private blockSizePx: number;
-  private cnvsz: number;
+  private canvasSize: number;
 
   constructor(fontSize: number, fontFamily: string, tileWidth: number, tileHeight: number) {
-    let el = <HTMLCanvasElement> document.getElementById('nrxCanvas');
-    this.cnvsz = 512;
-    el.insertAdjacentHTML('beforeend', '<canvas id="textCacheCanvas" style="height: ' + this.cnvsz + '; width: ' + this.cnvsz + '; text-align: center;"></canvas>');
-    this.canvas = <HTMLCanvasElement> document.getElementById('textCacheCanvas');
+    Object.assign(this, { fontSize, fontFamily, tileWidth, tileHeight });
+
+    // Figure out what the smallest power-of-two canvas size is that can fit a 32x32 map of characters in it
+    this.canvasSize = 2 ** 12;
+    const mininumTextureSize = (Math.max(tileWidth, tileHeight) + 2) * 32;
+    while (this.canvasSize / 2 > mininumTextureSize) {
+      this.canvasSize = this.canvasSize / 2;
+    }
+
+    // Create the canvas that will hold our texture atlas, size it appropriately and get the context
+    this.canvas = <HTMLCanvasElement> document.createElement('canvas');
+    this.canvas.id = 'textCacheCanvas';
+    this.canvas.setAttribute('height', this.canvasSize.toString()); // = "height: ' + this.canvasSize + '; width: ' + this.canvasSize'";
+    this.canvas.setAttribute('width', this.canvasSize.toString()); // = "height: ' + this.canvasSize + '; width: ' + this.canvasSize'";
     this.context = <CanvasRenderingContext2D> this.canvas.getContext('2d');
 
-    this.fontSize = fontSize;
-    this.fontFamily = fontFamily;
     this.blockSizePx = fontSize + 2;
-
-    this.tileWidth = tileWidth;
-    this.tileHeight = tileHeight;
-
-    this.canvas.width = this.cnvsz;
-    this.canvas.height = this.cnvsz;
+    this.canvas.width = this.canvasSize;
+    this.canvas.height = this.canvasSize;
 
     this.clipMap = new Map<string, Float32Array>();
-
-    this.context.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
-    this.context.textBaseline = 'top';
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.context.fillStyle = '#000000FF';
 
     this.drawAllCharactersToCanvas();
   }
 
   public drawAllCharactersToCanvas(): void {
+    this.context.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
+    this.context.textBaseline = 'top';
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.fillStyle = '#000000FF';
+
     for (let i = 0; i !== 16; ++i) {
       for (let j = 0; j !== 16; ++j) {
         if (this.allChars[j * 16 + i]) {
@@ -65,10 +68,10 @@ export class TextCache {
    * @returns Float32Array
    */
   private createClipspaceArray(x: number, y: number): Float32Array {
-    let clipX = (x * this.blockSizePx) / this.cnvsz;
-    let clipY = 1 - ((y * this.blockSizePx) / this.cnvsz);
-    let w = this.tileWidth / this.cnvsz;
-    let h = this.tileHeight / this.cnvsz;
+    const clipX = (x * this.blockSizePx) / this.canvasSize;
+    const clipY = 1 - ((y * this.blockSizePx) / this.canvasSize);
+    const w = this.tileWidth / this.canvasSize;
+    const h = this.tileHeight / this.canvasSize;
     let clips = [
       clipX, clipY,
       clipX + w, clipY,
