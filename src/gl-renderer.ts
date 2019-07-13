@@ -1,5 +1,6 @@
 import { TextCache } from './text-cache';
 import { NRXTerm } from './terminal';
+import { GlShaders } from './gl-shaders';
 
 export class GLRenderer {
   private terminal: NRXTerm;
@@ -8,13 +9,13 @@ export class GLRenderer {
   private glBgContext: WebGLRenderingContext;
   private textureProgram: WebGLProgram;
   private rectProgram: WebGLProgram;
-  private vloc: number;
-  private tloc: number;
-  private cloc: number;
-  private ctrloc: number;
-  private rloc: WebGLUniformLocation;
-  private bgvloc: number;
-  private bgcloc: number;
+  private fgVertexAttributeLocation: number;
+  private fgTextureAttributeLocation: number;
+  private fgColorAttributeLocation: number;
+  private fgCentreAttributeLocation: number;
+  private fgRotationAttributeLocation: number;
+  private bgVertexAttributeLocation: number;
+  private bgColorAttributeLocation: number;
   private textureAtlas: WebGLTexture;
 
   private fgVertexBuffer: WebGLBuffer;
@@ -35,65 +36,16 @@ export class GLRenderer {
 
   private _r = 0.01;
 
-  private readonly POINTS_PER_QUAD = 12;
+  private readonly FLOATS_PER_QUAD = 12;
 
-  // create shaders
-  private vertexShaderSrc =
-    'attribute vec2 aVertex;' +
-    'attribute vec2 cVertex;' +
-    'attribute vec2 aUV;' +
-    'attribute vec4 fragColor;' +
-    'varying vec2 vTex;' +
-    'varying vec4 fCol;' +
-    'uniform float f_rotation;' +
-    'void main(void) {' +
-    '  float px = aVertex.x - cVertex.x;' +
-    '  float py = aVertex.y - cVertex.y;' +
-    '  float npx = (px * cos(f_rotation)) + (py * sin(f_rotation));' +
-    '  float npy = (py * cos(f_rotation)) - (px * sin(f_rotation));' +
-    '  npx += cVertex.x;' +
-    '  npy += cVertex.y;' +
-    '  gl_Position = vec4(npx, npy, 0.0, 1.0);' +
-    '  vTex = aUV;' +
-    '  fCol = fragColor;' +
-    '}';
-
-  private fragmentShaderSrc =
-    'precision highp float;' +
-    'varying vec2 vTex;' +
-    'varying vec4 fCol;' +
-    'uniform sampler2D sampler0;' +
-    'void main(void){' +
-    //"  gl_FragColor = fCol + texture2D(sampler0, vTex);" +
-    '  gl_FragColor = vec4(fCol.x, fCol.y, fCol.z, texture2D(sampler0, vTex).w);' +
-    // '  gl_FragColor = fCol;' +
-    '}';
-
-  // create shaders
-  private vertexRectShaderSrc =
-    'attribute vec2 aVertex;' +
-    'attribute vec4 fragColor;' +
-    'varying vec4 fCol;' +
-    'void main(void) {' +
-    '  gl_Position = vec4(aVertex, 0.0, 1.0);' +
-    '  fCol = fragColor;' +
-    '}';
-
-  private fragmentRectShaderSrc =
-    'precision highp float;' +
-    'varying vec4 fCol;' +
-    'void main(void) {' +
-    '  gl_FragColor = fCol;' +
-    '}';
-
-  constructor(terminal: NRXTerm, textCache: TextCache, glFgcContext: WebGLRenderingContext, glBgcContext: WebGLRenderingContext) {
+  constructor(terminal: NRXTerm, textCache: TextCache, glFgContext: WebGLRenderingContext, glBgContext: WebGLRenderingContext) {
     this.terminal = terminal;
     this.textCache = textCache;
-    this.glFgContext = glFgcContext;
-    this.glBgContext = glBgcContext;
+    this.glFgContext = glFgContext;
+    this.glBgContext = glBgContext;
     this.setupShaders();
 
-    this.tsize = this.terminal.w * this.terminal.h * this.POINTS_PER_QUAD;
+    this.tsize = this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
     this.verts = new Float32Array(this.tsize);
     this.centres = new Float32Array(this.tsize);
     this.rotations = new Float32Array(this.tsize / 2);
@@ -114,12 +66,12 @@ export class GLRenderer {
 
   private setupShaders(): void {
 
-    // Foreground canvas, shaders, etc
+    // Set up foreground-layer shaders, font cache, etc
 
     let vertShaderObj = this.glFgContext.createShader(this.glFgContext.VERTEX_SHADER);
     let fragShaderObj = this.glFgContext.createShader(this.glFgContext.FRAGMENT_SHADER);
-    this.glFgContext.shaderSource(vertShaderObj, this.vertexShaderSrc);
-    this.glFgContext.shaderSource(fragShaderObj, this.fragmentShaderSrc);
+    this.glFgContext.shaderSource(vertShaderObj, GlShaders.vertexShaderFgSrc);
+    this.glFgContext.shaderSource(fragShaderObj, GlShaders.fragmentShaderFgSrc);
     this.glFgContext.compileShader(vertShaderObj);
     this.glFgContext.compileShader(fragShaderObj);
 
@@ -131,8 +83,8 @@ export class GLRenderer {
 
     let vertRectShaderObj = this.glFgContext.createShader(this.glFgContext.VERTEX_SHADER);
     let fragRectShaderObj = this.glFgContext.createShader(this.glFgContext.FRAGMENT_SHADER);
-    this.glFgContext.shaderSource(vertRectShaderObj, this.vertexRectShaderSrc);
-    this.glFgContext.shaderSource(fragRectShaderObj, this.fragmentRectShaderSrc);
+    this.glFgContext.shaderSource(vertRectShaderObj, GlShaders.vertexShaderBgSrc);
+    this.glFgContext.shaderSource(fragRectShaderObj, GlShaders.fragmentShaderBgSrc);
     this.glFgContext.compileShader(vertRectShaderObj);
     this.glFgContext.compileShader(fragRectShaderObj);
 
@@ -149,12 +101,12 @@ export class GLRenderer {
 
     this.glFgContext.useProgram(this.textureProgram);
 
-    // Background canvas, shaders, etc
+    // Set up background-layer shaders
 
     let vertShaderObjBg = this.glBgContext.createShader(this.glBgContext.VERTEX_SHADER);
     let fragShaderObjBg = this.glBgContext.createShader(this.glBgContext.FRAGMENT_SHADER);
-    this.glBgContext.shaderSource(vertShaderObjBg, this.vertexRectShaderSrc);
-    this.glBgContext.shaderSource(fragShaderObjBg, this.fragmentRectShaderSrc);
+    this.glBgContext.shaderSource(vertShaderObjBg, GlShaders.vertexShaderBgSrc);
+    this.glBgContext.shaderSource(fragShaderObjBg, GlShaders.fragmentShaderBgSrc);
     this.glBgContext.compileShader(vertShaderObjBg);
     this.glBgContext.compileShader(fragShaderObjBg);
 
@@ -164,72 +116,57 @@ export class GLRenderer {
     this.glBgContext.linkProgram(this.rectProgram);
     this.glBgContext.useProgram(this.rectProgram);
 
-    // Both
+    // Get attribute locations
 
-    this.vloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aVertex');
-    this.tloc = this.glFgContext.getAttribLocation(this.textureProgram, 'aUV');
-    this.cloc = this.glFgContext.getAttribLocation(this.textureProgram, 'fragColor');
-    this.ctrloc = this.glFgContext.getAttribLocation(this.textureProgram, 'cVertex');
-    this.rloc = this.glFgContext.getUniformLocation(this.textureProgram, 'f_rotation');
+    this.fgVertexAttributeLocation = this.glFgContext.getAttribLocation(this.textureProgram, 'aVertex');
+    this.fgTextureAttributeLocation = this.glFgContext.getAttribLocation(this.textureProgram, 'aUV');
+    this.fgColorAttributeLocation = this.glFgContext.getAttribLocation(this.textureProgram, 'fragColor');
+    this.fgCentreAttributeLocation = this.glFgContext.getAttribLocation(this.textureProgram, 'cVertex');
+    this.fgRotationAttributeLocation = this.glFgContext.getAttribLocation(this.textureProgram, 'rotation');
 
-    this.bgvloc = this.glBgContext.getAttribLocation(this.rectProgram, 'aVertex');
-    this.bgcloc = this.glBgContext.getAttribLocation(this.rectProgram, 'fragColor');
+    this.bgVertexAttributeLocation = this.glBgContext.getAttribLocation(this.rectProgram, 'aVertex');
+    this.bgColorAttributeLocation = this.glBgContext.getAttribLocation(this.rectProgram, 'fragColor');
+    
+    // Set unchanging uniforms
 
-    this.glFgContext.viewport(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
-    this.glBgContext.viewport(0, 0, this.terminal.glBgCtx.canvas.width, this.terminal.glBgCtx.canvas.height);
+    this.glFgContext.uniform1f(this.glFgContext.getUniformLocation(this.textureProgram, 'world_w'), this.terminal.glFgCtx.canvas.width);
+    this.glFgContext.uniform1f(this.glFgContext.getUniformLocation(this.textureProgram, 'world_h'), this.terminal.glFgCtx.canvas.height);
+    this.glBgContext.uniform1f(this.glBgContext.getUniformLocation(this.rectProgram, 'world_w'), this.terminal.glBgCtx.canvas.width);
+    this.glBgContext.uniform1f(this.glBgContext.getUniformLocation(this.rectProgram, 'world_h'), this.terminal.glBgCtx.canvas.height);
 
-    console.log('WebGL Rendering context set up correctly and texture loaded from text canvas.');
+    console.log('WebGL Rendering contexts set up correctly and texture loaded from text canvas.');
   }
 
   public firstRunSetup(): void {
     for (let i = 0; i !== this.terminal.w; ++i) {
       for (let j = 0; j !== this.terminal.h; ++j) {
-        let index = (i * this.POINTS_PER_QUAD) + (j * this.terminal.w * this.POINTS_PER_QUAD);
-        this.verts.set(this.getverts(i, j), index);
-        this.centres.set(this.getcentres(i, j), index);
+        let index = (i * this.FLOATS_PER_QUAD) + (j * this.terminal.w * this.FLOATS_PER_QUAD);
+        this.verts.set(this.cacheTileVertices(i, j), index);
+        this.centres.set(this.cacheTileCentre(i, j), index);
         this.clips.set(this.textCache.getCharacterVertices('?'), index);
-        let r = 1;
-        let g = 0;
-        let b = 1;
         this.fgcs.set(new Float32Array([
-          r, g, b, 0,
-          r, g, b, 0,
-          r, g, b, 0,
-          r, g, b, 0,
-          r, g, b, 0,
-          r, g, b, 0,
+          1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0
         ]), index * 2);
         this.bgcs.set(new Float32Array([
-          1, 1, 0, 0,
-          1, 1, 0, 0,
-          1, 1, 0, 0,
-          1, 1, 0, 0,
-          1, 1, 0, 0,
-          1, 1, 0, 0,
+          1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
         ]), index * 2);
+        this.rotations.set(new Float32Array([
+          0, 0, 0, 0, 0, 0
+        ]), index / 2);
       }
     }
-  }
 
-  public bindAndBuffer(data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
-    this.glFgContext.bindBuffer(this.glFgContext.ARRAY_BUFFER, buffer);
-    this.glFgContext.bufferData(this.glFgContext.ARRAY_BUFFER, data, (arrayType ? arrayType : this.glFgContext.STATIC_DRAW));
-  }
-
-  // Enables a vertex attribute array, binds a buffer, optionally binds a texture if drawing a textured quad, and... I
-  // honestly don't know enough about how WebGL works to write a coherent comment here explaining what is happening
-  public enableVertexArray(attribPointer: number, buffer: WebGLBuffer, step: number, texture?: WebGLTexture): void {
-    this.glFgContext.enableVertexAttribArray(attribPointer);
-    this.glFgContext.bindBuffer(this.glFgContext.ARRAY_BUFFER, buffer);
-    if (texture) {
-      this.glFgContext.bindTexture(this.glFgContext.TEXTURE_2D, texture);
-    }
-    this.glFgContext.vertexAttribPointer(attribPointer, step, this.glFgContext.FLOAT, false, 0, 0);
+    // Buffer all data that will not change over time (vertexes for the quads to draw each cell, and the vertex
+    // that define their central points).
+    this.bindAndBuffer(this.glFgContext, this.verts, this.fgVertexBuffer);
+    this.bindAndBuffer(this.glFgContext, this.centres, this.fgVertexCentreBuffer);
+    this.bindAndBuffer(this.glBgContext, this.verts, this.bgVertexBuffer);
   }
 
   public pushForegroundData(i: number, j: number, char: string, r: number, g: number, b: number, rot: number): any {
-    let index = (j * this.terminal.w * this.POINTS_PER_QUAD) + (i * this.POINTS_PER_QUAD);
+    let index = (j * this.terminal.w * this.FLOATS_PER_QUAD) + (i * this.FLOATS_PER_QUAD);
     let fgcIndex = index * 2;
+    let rotationIndex = index / 2;
     this.clips.set(this.textCache.getCharacterVertices(char), index);
     // this.rotations.set(rot, index);
     for (let n = 0; n < 24; n += 4) {
@@ -237,10 +174,13 @@ export class GLRenderer {
       this.fgcs[fgcIndex + n + 1] = g;
       this.fgcs[fgcIndex + n + 2] = b;
     }
+    for (let k = 0; k !== 6; ++k) {
+      this.rotations[rotationIndex + k] = rot;
+    }
   }
 
-  public pushBackgroundColorData(i: number, j: number, r: number, g: number, b: number): any {
-    let bgcIndex = (j * this.terminal.w * this.POINTS_PER_QUAD) + (i * this.POINTS_PER_QUAD);
+  public pushBackgroundData(i: number, j: number, r: number, g: number, b: number): any {
+    let bgcIndex = (j * this.terminal.w * this.FLOATS_PER_QUAD) + (i * this.FLOATS_PER_QUAD);
     bgcIndex *= 2;
     for (let n = 0; n < 24; n += 4) {
       this.bgcs[bgcIndex + n + 0] = r;
@@ -249,86 +189,75 @@ export class GLRenderer {
     }
   }
 
-  public switchProgram(str: string): void {
-    if (str === 'BACKGROUND') {
-      this.glBgContext.useProgram(this.rectProgram);
-    } else if (str === 'FOREGROUND') {
-      this.glFgContext.useProgram(this.textureProgram);
+  // Enables a vertex attribute array, binds a buffer, optionally binds a texture if drawing a textured quad, and... I
+  // honestly don't know enough about how WebGL works to write a coherent comment here explaining what is happening
+  public enableVertexArray(glContext: WebGLRenderingContext, attribPointer: number, buffer: WebGLBuffer, step: number, texture?: WebGLTexture): void {
+    glContext.enableVertexAttribArray(attribPointer);
+    glContext.bindBuffer(glContext.ARRAY_BUFFER, buffer);
+    if (texture) {
+      glContext.bindTexture(glContext.TEXTURE_2D, texture);
     }
+    glContext.vertexAttribPointer(attribPointer, step, glContext.FLOAT, false, 0, 0);
+  }
+
+  public bindAndBuffer(glContext: WebGLRenderingContext, data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
+    glContext.bindBuffer(glContext.ARRAY_BUFFER, buffer);
+    glContext.bufferData(glContext.ARRAY_BUFFER, data, (arrayType ? arrayType : glContext.STATIC_DRAW));
   }
 
   public draw(): void {
-    // this.switchProgram('FOREGROUND');
+    // Clear the foreground canvas. TODO: I guess this is not necessary?
+    // this.glFgContext.scissor(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
+    // this.glFgContext.clearColor(0, 0, 0, 0);
+    // this.glFgContext.clear(this.glFgContext.COLOR_BUFFER_BIT);
 
-    this.glFgContext.scissor(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
-    this.glFgContext.clearColor(0, 0, 0, 0);
-    this.glFgContext.clear(this.glFgContext.COLOR_BUFFER_BIT);
+    // Buffer all foreground data that changes frame-by-frame and draw to the foreground canvas.
+    this.bindAndBuffer(this.glFgContext, this.clips, this.textureBuffer);
+    this.bindAndBuffer(this.glFgContext, this.rotations, this.fgRotationBuffer);
+    this.bindAndBuffer(this.glFgContext, this.fgcs, this.fgcBuffer);
 
-    let w = (2 / this.terminal.w);
-    let h = (2 / this.terminal.h);
-
-    this.glFgContext.uniform1fv(this.rloc, [(0.2 * Math.cos(this._r += 0.025))]);
-
-    this.bindAndBuffer(this.verts, this.fgVertexBuffer);
-    this.bindAndBuffer(this.centres, this.fgVertexCentreBuffer);
-    // this.glContext.bindBuffer(this.glContext.ARRAY_BUFFER, this.vertexBuffer);
-    this.bindAndBuffer(this.fgcs, this.fgcBuffer);
-    this.bindAndBuffer(this.clips, this.textureBuffer);
-
-    this.enableVertexArray(this.vloc, this.fgVertexBuffer, 2);
-    this.enableVertexArray(this.ctrloc, this.fgVertexCentreBuffer, 2);
-    this.enableVertexArray(this.cloc, this.fgcBuffer, 4);
-    this.enableVertexArray(this.tloc, this.textureBuffer, 2, this.textureAtlas);
+    this.enableVertexArray(this.glFgContext, this.fgVertexAttributeLocation, this.fgVertexBuffer, 2);
+    this.enableVertexArray(this.glFgContext, this.fgCentreAttributeLocation, this.fgVertexCentreBuffer, 2);
+    this.enableVertexArray(this.glFgContext, this.fgRotationAttributeLocation, this.fgRotationBuffer, 1);
+    this.enableVertexArray(this.glFgContext, this.fgColorAttributeLocation, this.fgcBuffer, 4);
+    this.enableVertexArray(this.glFgContext, this.fgTextureAttributeLocation, this.textureBuffer, 2, this.textureAtlas);
 
     this.glFgContext.drawArrays(this.glFgContext.TRIANGLES, 0, this.verts.length / 2);
 
-    // this.switchProgram('BACKGROUND');
+    // Buffer all background data that changes frame-by-frame and draw to the background canvas.
+    this.bindAndBuffer(this.glBgContext, this.bgcs, this.bgcBuffer);
 
-    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgVertexBuffer);
-    this.glBgContext.bufferData(this.glBgContext.ARRAY_BUFFER, this.verts, this.glBgContext.STATIC_DRAW);
-    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgcBuffer);
-    this.glBgContext.bufferData(this.glBgContext.ARRAY_BUFFER, this.bgcs, this.glBgContext.STATIC_DRAW);
-
-    this.glBgContext.enableVertexAttribArray(this.bgvloc);
-    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgVertexBuffer);
-    this.glBgContext.vertexAttribPointer(this.bgvloc, 2, this.glBgContext.FLOAT, false, 0, 0);
-
-    this.glBgContext.enableVertexAttribArray(this.bgcloc);
-    this.glBgContext.bindBuffer(this.glBgContext.ARRAY_BUFFER, this.bgcBuffer);
-    this.glBgContext.vertexAttribPointer(this.bgcloc, 4, this.glBgContext.FLOAT, false, 0, 0);
+    this.enableVertexArray(this.glBgContext, this.bgVertexAttributeLocation, this.bgVertexBuffer, 2);
+    this.enableVertexArray(this.glBgContext, this.bgColorAttributeLocation, this.bgcBuffer, 4);
 
     this.glBgContext.drawArrays(this.glBgContext.TRIANGLES, 0, this.verts.length / 2);
   }
 
-  public getverts(x: number, y: number): Float32Array {
-    let normalizedX = 2 * ((x - 0) / (this.terminal.w - 0)) - 1;
-    let normalizedY = -(2 * ((y - 0) / (this.terminal.h - 0)) - 1);
-    let w = (2 / this.terminal.w);
-    let h = (2 / this.terminal.h);
+  public cacheTileVertices(x: number, y: number): Float32Array {
+    let worldSpaceX = x * this.terminal.tileWidth;
+    let worldSpaceY = y * this.terminal.tileHeight;
 
     return new Float32Array([
-      normalizedX, normalizedY,
-      normalizedX + w, normalizedY,
-      normalizedX + w, normalizedY - h,
-      normalizedX, normalizedY,
-      normalizedX, normalizedY - h,
-      normalizedX + w, normalizedY - h,
+      worldSpaceX, worldSpaceY,
+      worldSpaceX + this.terminal.tileWidth, worldSpaceY,
+      worldSpaceX + this.terminal.tileWidth, worldSpaceY + this.terminal.tileHeight,
+      worldSpaceX, worldSpaceY,
+      worldSpaceX, worldSpaceY + this.terminal.tileHeight,
+      worldSpaceX + this.terminal.tileWidth, worldSpaceY + this.terminal.tileHeight,
     ]);
   }
 
-  public getcentres(x: number, y: number): Float32Array {
-    let normalizedX = 2 * ((x - 0) / (this.terminal.w - 0)) - 1;
-    let normalizedY = -(2 * ((y - 0) / (this.terminal.h - 0)) - 1);
-    let w = (2 / this.terminal.w);
-    let h = (2 / this.terminal.h);
+  public cacheTileCentre(x: number, y: number): Float32Array {
+    let worldSpaceX = x * this.terminal.tileWidth;
+    let worldSpaceY = y * this.terminal.tileHeight;
 
     return new Float32Array([
-      normalizedX + w / 2, normalizedY - h / 2,
-      normalizedX + w / 2, normalizedY - h / 2,
-      normalizedX + w / 2, normalizedY - h / 2,
-      normalizedX + w / 2, normalizedY - h / 2,
-      normalizedX + w / 2, normalizedY - h / 2,
-      normalizedX + w / 2, normalizedY - h / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
+      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2
     ]);
   }
 }

@@ -9,12 +9,6 @@ export class Color {
     this.b = b;
   }
 
-  // public set(r: number, g: number, b: number): void {
-  //   this.r = r;
-  //   this.g = g;
-  //   this.b = b;
-  // }
-
   public equals(that: Color): boolean {
     return this.r === that.r && this.g === that.g && this.b === that.b;
   }

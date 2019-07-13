@@ -42,7 +42,7 @@ export class Point {
    * @returns number
    */
   public manhattanDistanceTo(that: Point): number {
-    return Math.sqrt(this.x - that.x) + Math.abs(this.y + that.y);
+    return Math.abs(this.x - that.x) + Math.abs(this.y + that.y);
   }
 
   /**

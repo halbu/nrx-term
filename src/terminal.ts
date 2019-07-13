@@ -105,8 +105,7 @@ export class NRXTerm {
   }
 
   /**
-   * Draws the complete terminal to the canvas at the specified position. Will only redraw cells that have changed
-   * in some way since the last draw, unless a tile's forceRedraw flag has been set to true.
+   * Draws the complete terminal to the canvases. Redraws everything, every frame. Yeehaw
    * @returns {void}
    */
   public render(): void {
@@ -251,8 +250,8 @@ export class NRXTerm {
                   currentTile.setFgc(baseColor.r, baseColor.g, baseColor.b);
                 }
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
-                // terminal with characters that inherit any existing rotation on the
-                // underlying tile...
+                                        // terminal with characters that inherit any existing rotation on the
+                                        // underlying tile...
               }
 
               xOffset++;

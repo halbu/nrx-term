@@ -2,8 +2,8 @@
 
 ### what
 
-Terminal emulator that renders to HTML5 Canvas. Supports foreground/background coloration ~and character rotation~.
+Terminal emulator that renders to HTML5 Canvas. Supports foreground/background coloration ~and character rotation~ character rotation again!
 
 ### Todo
 
-- [ ] Re-implement character rotation.
+- [x] Re-implement character rotation.

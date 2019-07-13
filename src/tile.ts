@@ -62,12 +62,13 @@ export class NRXTile {
     this._tileState.bgc.g = g;
     this._tileState.bgc.b = b;
   }
-  // public setBgc(bgc: Color): void { this._currentTileState.bgc = bgc; }
+  
   public setBga(bga: number): void { this._tileState.bga = bga; }
   public setChar(char: string): void { this._tileState.char = char; }
+
+  // Rotation is in radians. Zero (or multiples of 2pi) equal no rotation. Positive rotation is counterclockwise.
   public setRot(rot: number): void { this._tileState.rot = rot; }
 
-  // Methods that allow the display characteristics of the tile to be modified.
   get fgc(): Color { return this._tileState.fgc; }
   get bgc(): Color { return this._tileState.bgc; }
   get bga(): number { return this._tileState.bga; }

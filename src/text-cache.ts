@@ -6,7 +6,7 @@ export class TextCache {
   private tileWidth: number;
   private tileHeight: number;
   private clipMap: Map<string, Float32Array>;
-  private allChars = ' Ꙟ↑\'•·~`ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽabcčćdđefghijklmnopqrsštuvwxyzžАБВГҐДЂЕЁЄЖЗЅИІЇЙЈКЛЉМНЊОПРСТЋУЎФХЦЧЏШЩЪЫЬЭЮЯабвгґдђеёєжзѕиіїйјклљмнњопрстћуўфхцчџшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω1234567890‘?’“!”"`(%)[#]{@}/&\<-+÷×=>®©$€£¥¢:;,.*';
+  private allChars = ' |.Ø¤Λ↑\'•·~`ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽabcčćdđefghijklmnopqrsštuvwxyzžАБВГҐДЂЕЁЄЖЗЅИІЇЙЈКЛЉМНЊОПРСТЋУЎФХЦЧЏШЩЪЫЬЭЮЯабвгґдђеёєжзѕиіїйјклљмнњопрстћуўфхцчџшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω1234567890‘?’“!”"`(%)[#]{@}/&\<-+÷×=>®©$€£¥¢:;,.*';
   private blockSizePx: number;
   private canvasSize: number;
 
@@ -42,19 +42,19 @@ export class TextCache {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.context.fillStyle = '#000000FF';
 
-    for (let i = 0; i !== 16; ++i) {
-      for (let j = 0; j !== 16; ++j) {
-        if (this.allChars[j * 16 + i]) {
+    for (let i = 0; i !== 32; ++i) {
+      for (let j = 0; j !== 32; ++j) {
+        if (this.allChars[j * 32 + i]) {
 
           // Write the nth character to the canvas. Allow some blank space around each character to prevent them
           // overdrawing each other - this extra space will be clipped out when we return the vertices for the character.
           this.context.fillText(
-            this.allChars[j * 16 + i],
+            this.allChars[j * 32 + i],
             i * this.blockSizePx + 1,
             j * this.blockSizePx + 1);
 
-          // Calculate the clipspace vertices of the two tris that enclose it. Cache them in a map for fast lookup
-          this.clipMap.set(this.allChars[j * 16 + i], this.createClipspaceArray(i, j));
+          // Calculate the clipspace vertices of the two tris that enclose it. Store them in a map for fast lookup
+          this.clipMap.set(this.allChars[j * 32 + i], this.createClipspaceArray(i, j));
         }
       }
     }
