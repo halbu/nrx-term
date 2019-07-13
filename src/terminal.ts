@@ -33,8 +33,8 @@ export class NRXTerm {
   /**
    * @param  {number} x The X position of the terminal within the canvas (pixels from left edge)
    * @param  {number} y The Y position of the terminal within the canvas (pixels from top edge)
-   * @param  {number} w The width of the terminal, specified in terminal cells
-   * @param  {number} h The height of the terminal, specified in terminal cells
+   * @param  {number} w The width of the terminal, specified in terminal tiles
+   * @param  {number} h The height of the terminal, specified in terminal tiles
    * @param  {CanvasRenderingContext2D} ctx The rendering context of the canvas that the terminal will be drawn to
    * @param  {string} fontFamily The font-family that will be used to draw characters to the terminal
    * @param  {number} fontSize Font size, in points, that will be used to draw characters to the terminal
@@ -142,8 +142,8 @@ export class NRXTerm {
    * whitespace) and sets the background color of all tiles within the rectangle to the specified color c
    * @param  {number} x X-position of the top-left point of the rectangle to fill
    * @param  {number} y Y-position of the top-left point of the rectangle to fill
-   * @param  {number} w Width in cells of the rectangle to fill
-   * @param  {number} h Height in cells of the rectangle to fill
+   * @param  {number} w Width in tiles of the rectangle to fill
+   * @param  {number} h Height in tiles of the rectangle to fill
    * @param  {string} c Color in hex to use to fill the rectangle. Defaults to black
    * @returns void
    */
@@ -363,9 +363,9 @@ export class NRXTerm {
   }
 
   /**
-   * Returns a tuple of Points representing the start and end cells of a mouse-drag action, or null if no mouse-drag
+   * Returns a tuple of Points representing the start and end tiles of a mouse-drag action, or null if no mouse-drag
    * action is currently in progress.
-   * @returns [Point, Point] | null
+   * @returns [Point, Point]
    */
   get dragPoints(): [Point, Point] {
     if (this.dragStatus !== InputConstants.Mouse.DragStatus.None) {
@@ -393,7 +393,7 @@ export class NRXTerm {
   }
 
   /**
-   * Returns a Point representing the mouse's X-Y position in terms of cells within the terminal.
+   * Returns a Point representing the mouse's X-Y position in terms of tiles within the terminal.
    * FIXME: This function currently assumes that the terminal's upper-left point is at 0,0 on the canvas, which is not
    * guaranteed to be true.
    * @returns Point

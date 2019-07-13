@@ -1,14 +1,18 @@
-import { TextCache } from './text-cache';
+import { CharacterCache } from './character-cache';
 import { NRXTerm } from './terminal';
 import { GlShaders } from './gl-shaders';
 
 export class GLRenderer {
   private terminal: NRXTerm;
-  private textCache: TextCache;
+  private characterCache: CharacterCache;
+  private textureAtlas: WebGLTexture;
+
   private glFgContext: WebGLRenderingContext;
   private glBgContext: WebGLRenderingContext;
+
   private textureProgram: WebGLProgram;
   private rectProgram: WebGLProgram;
+
   private fgVertexAttributeLocation: number;
   private fgTextureAttributeLocation: number;
   private fgColorAttributeLocation: number;
@@ -16,52 +20,59 @@ export class GLRenderer {
   private fgRotationAttributeLocation: number;
   private bgVertexAttributeLocation: number;
   private bgColorAttributeLocation: number;
-  private textureAtlas: WebGLTexture;
 
   private fgVertexBuffer: WebGLBuffer;
   private fgVertexCentreBuffer: WebGLBuffer;
   private fgRotationBuffer: WebGLBuffer;
   private bgVertexBuffer: WebGLBuffer;
-  private textureBuffer: WebGLBuffer;
+  private fgTextureBuffer: WebGLBuffer;
   private fgcBuffer: WebGLBuffer;
   private bgcBuffer: WebGLBuffer;
 
-  private tsize: number;
-  private verts: Float32Array;
-  private centres: Float32Array;
-  private rotations: Float32Array;
-  private clips: Float32Array;
-  private fgcs: Float32Array;
-  private bgcs: Float32Array;
-
-  private _r = 0.01;
+  private terminalTileVertices: Float32Array;
+  private centrePointCoordinates: Float32Array;
+  private rotationValues: Float32Array;
+  private textureVertices: Float32Array;
+  private fgColorValues: Float32Array;
+  private bgColorValues: Float32Array;
 
   private readonly FLOATS_PER_QUAD = 12;
 
-  constructor(terminal: NRXTerm, textCache: TextCache, glFgContext: WebGLRenderingContext, glBgContext: WebGLRenderingContext) {
+  constructor(terminal: NRXTerm, textCache: CharacterCache, glFgContext: WebGLRenderingContext, glBgContext: WebGLRenderingContext) {
     this.terminal = terminal;
-    this.textCache = textCache;
+    this.characterCache = textCache;
     this.glFgContext = glFgContext;
     this.glBgContext = glBgContext;
     this.setupShaders();
 
-    this.tsize = this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
-    this.verts = new Float32Array(this.tsize);
-    this.centres = new Float32Array(this.tsize);
-    this.rotations = new Float32Array(this.tsize / 2);
-    this.clips = new Float32Array(this.tsize);
-    this.fgcs = new Float32Array(this.tsize * 2);
-    this.bgcs = new Float32Array(this.tsize * 2);
+    const totalNumberOfPoints = this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
 
-    this.fgVertexBuffer = this.glFgContext.createBuffer();
-    this.fgVertexCentreBuffer = this.glFgContext.createBuffer();
-    this.fgRotationBuffer = this.glFgContext.createBuffer();
-    this.bgVertexBuffer = this.glBgContext.createBuffer();
-    this.textureBuffer = this.glFgContext.createBuffer();
-    this.fgcBuffer = this.glFgContext.createBuffer();
-    this.bgcBuffer = this.glBgContext.createBuffer();
+    this.terminalTileVertices =   new Float32Array(totalNumberOfPoints);
+    this.centrePointCoordinates = new Float32Array(totalNumberOfPoints);
+    this.rotationValues =         new Float32Array(totalNumberOfPoints / 2);
+    this.textureVertices =        new Float32Array(totalNumberOfPoints);
+    this.fgColorValues =          new Float32Array(totalNumberOfPoints * 2);
+    this.bgColorValues =          new Float32Array(totalNumberOfPoints * 2);
 
-    this.firstRunSetup();
+    this.fgVertexBuffer =         this.glFgContext.createBuffer();
+    this.fgVertexCentreBuffer =   this.glFgContext.createBuffer();
+    this.fgRotationBuffer =       this.glFgContext.createBuffer();
+    this.fgTextureBuffer =        this.glFgContext.createBuffer();
+    this.fgcBuffer =              this.glFgContext.createBuffer();
+
+    this.bgVertexBuffer =         this.glBgContext.createBuffer();
+    this.bgcBuffer =              this.glBgContext.createBuffer();
+
+    this.initialise();
+  }
+
+  private readTextureFromCharacterCacheCanvas(): void {
+    this.textureAtlas = <WebGLTexture> this.glFgContext.createTexture();
+    this.glFgContext.bindTexture(this.glFgContext.TEXTURE_2D, this.textureAtlas);
+    this.glFgContext.pixelStorei(this.glFgContext.UNPACK_FLIP_Y_WEBGL, 1);
+    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MIN_FILTER, this.glFgContext.LINEAR);
+    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MAG_FILTER, this.glFgContext.LINEAR);
+    this.glFgContext.texImage2D(this.glFgContext.TEXTURE_2D, 0, this.glFgContext.RGBA, this.glFgContext.RGBA, this.glFgContext.UNSIGNED_BYTE, this.characterCache.canvas);
   }
 
   private setupShaders(): void {
@@ -88,12 +99,7 @@ export class GLRenderer {
     this.glFgContext.compileShader(vertRectShaderObj);
     this.glFgContext.compileShader(fragRectShaderObj);
 
-    this.textureAtlas = <WebGLTexture> this.glFgContext.createTexture();
-    this.glFgContext.bindTexture(this.glFgContext.TEXTURE_2D, this.textureAtlas);
-    this.glFgContext.pixelStorei(this.glFgContext.UNPACK_FLIP_Y_WEBGL, 1);
-    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MIN_FILTER, this.glFgContext.LINEAR);
-    this.glFgContext.texParameteri(this.glFgContext.TEXTURE_2D, this.glFgContext.TEXTURE_MAG_FILTER, this.glFgContext.LINEAR);
-    this.glFgContext.texImage2D(this.glFgContext.TEXTURE_2D, 0, this.glFgContext.RGBA, this.glFgContext.RGBA, this.glFgContext.UNSIGNED_BYTE, this.textCache.canvas);
+    this.readTextureFromCharacterCacheCanvas();
 
     this.glFgContext.enable(this.glFgContext.BLEND);
     this.glFgContext.blendFunc(this.glFgContext.CONSTANT_COLOR, this.glFgContext.SRC_ALPHA);
@@ -133,49 +139,47 @@ export class GLRenderer {
     this.glFgContext.uniform1f(this.glFgContext.getUniformLocation(this.textureProgram, 'world_h'), this.terminal.glFgCtx.canvas.height);
     this.glBgContext.uniform1f(this.glBgContext.getUniformLocation(this.rectProgram, 'world_w'), this.terminal.glBgCtx.canvas.width);
     this.glBgContext.uniform1f(this.glBgContext.getUniformLocation(this.rectProgram, 'world_h'), this.terminal.glBgCtx.canvas.height);
-
-    console.log('WebGL Rendering contexts set up correctly and texture loaded from text canvas.');
   }
 
-  public firstRunSetup(): void {
+  public initialise(): void {
     for (let i = 0; i !== this.terminal.w; ++i) {
       for (let j = 0; j !== this.terminal.h; ++j) {
         let index = (i * this.FLOATS_PER_QUAD) + (j * this.terminal.w * this.FLOATS_PER_QUAD);
-        this.verts.set(this.cacheTileVertices(i, j), index);
-        this.centres.set(this.cacheTileCentre(i, j), index);
-        this.clips.set(this.textCache.getCharacterVertices('?'), index);
-        this.fgcs.set(new Float32Array([
+        this.terminalTileVertices.set(this.cacheTileVertices(i, j), index);
+        this.centrePointCoordinates.set(this.cacheTileCentre(i, j), index);
+        this.textureVertices.set(this.characterCache.getCharacterVertices('?'), index);
+        this.fgColorValues.set(new Float32Array([
           1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0
         ]), index * 2);
-        this.bgcs.set(new Float32Array([
+        this.bgColorValues.set(new Float32Array([
           1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
         ]), index * 2);
-        this.rotations.set(new Float32Array([
+        this.rotationValues.set(new Float32Array([
           0, 0, 0, 0, 0, 0
         ]), index / 2);
       }
     }
 
-    // Buffer all data that will not change over time (vertexes for the quads to draw each cell, and the vertex
-    // that define their central points).
-    this.bindAndBuffer(this.glFgContext, this.verts, this.fgVertexBuffer);
-    this.bindAndBuffer(this.glFgContext, this.centres, this.fgVertexCentreBuffer);
-    this.bindAndBuffer(this.glBgContext, this.verts, this.bgVertexBuffer);
+    // Buffer all data that will not change over time (vertices that define the quads to draw each tile, and the vertex
+    // that defines each tile's central point).
+    this.bufferArray(this.glFgContext, this.terminalTileVertices, this.fgVertexBuffer);
+    this.bufferArray(this.glFgContext, this.centrePointCoordinates, this.fgVertexCentreBuffer);
+    this.bufferArray(this.glBgContext, this.terminalTileVertices, this.bgVertexBuffer);
   }
 
   public pushForegroundData(i: number, j: number, char: string, r: number, g: number, b: number, rot: number): any {
     let index = (j * this.terminal.w * this.FLOATS_PER_QUAD) + (i * this.FLOATS_PER_QUAD);
     let fgcIndex = index * 2;
     let rotationIndex = index / 2;
-    this.clips.set(this.textCache.getCharacterVertices(char), index);
+    this.textureVertices.set(this.characterCache.getCharacterVertices(char), index);
     // this.rotations.set(rot, index);
     for (let n = 0; n < 24; n += 4) {
-      this.fgcs[fgcIndex + n + 0] = r;
-      this.fgcs[fgcIndex + n + 1] = g;
-      this.fgcs[fgcIndex + n + 2] = b;
+      this.fgColorValues[fgcIndex + n + 0] = r;
+      this.fgColorValues[fgcIndex + n + 1] = g;
+      this.fgColorValues[fgcIndex + n + 2] = b;
     }
     for (let k = 0; k !== 6; ++k) {
-      this.rotations[rotationIndex + k] = rot;
+      this.rotationValues[rotationIndex + k] = rot;
     }
   }
 
@@ -183,9 +187,9 @@ export class GLRenderer {
     let bgcIndex = (j * this.terminal.w * this.FLOATS_PER_QUAD) + (i * this.FLOATS_PER_QUAD);
     bgcIndex *= 2;
     for (let n = 0; n < 24; n += 4) {
-      this.bgcs[bgcIndex + n + 0] = r;
-      this.bgcs[bgcIndex + n + 1] = g;
-      this.bgcs[bgcIndex + n + 2] = b;
+      this.bgColorValues[bgcIndex + n + 0] = r;
+      this.bgColorValues[bgcIndex + n + 1] = g;
+      this.bgColorValues[bgcIndex + n + 2] = b;
     }
   }
 
@@ -200,37 +204,40 @@ export class GLRenderer {
     glContext.vertexAttribPointer(attribPointer, step, glContext.FLOAT, false, 0, 0);
   }
 
-  public bindAndBuffer(glContext: WebGLRenderingContext, data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
+  public bufferArray(glContext: WebGLRenderingContext, data: Float32Array, buffer: WebGLBuffer, arrayType?: number): void {
     glContext.bindBuffer(glContext.ARRAY_BUFFER, buffer);
     glContext.bufferData(glContext.ARRAY_BUFFER, data, (arrayType ? arrayType : glContext.STATIC_DRAW));
   }
 
   public draw(): void {
-    // Clear the foreground canvas. TODO: I guess this is not necessary?
-    // this.glFgContext.scissor(0, 0, this.terminal.glFgCtx.canvas.width, this.terminal.glFgCtx.canvas.height);
-    // this.glFgContext.clearColor(0, 0, 0, 0);
-    // this.glFgContext.clear(this.glFgContext.COLOR_BUFFER_BIT);
+    // Check if the texture needs updating - if the terminal has encountered a new character that it has not rendered before (and which
+    // the user didn't tell us about in advance...) then it will have added it to the texture atlas, and the foreground context will need
+    // to pull new texture information out.
+    if (this.characterCache.textureNeedsUpdatingFlag) {
+      this.characterCache.textureNeedsUpdatingFlag = false;
+      this.readTextureFromCharacterCacheCanvas();
+    }
 
     // Buffer all foreground data that changes frame-by-frame and draw to the foreground canvas.
-    this.bindAndBuffer(this.glFgContext, this.clips, this.textureBuffer);
-    this.bindAndBuffer(this.glFgContext, this.rotations, this.fgRotationBuffer);
-    this.bindAndBuffer(this.glFgContext, this.fgcs, this.fgcBuffer);
+    this.bufferArray(this.glFgContext, this.textureVertices, this.fgTextureBuffer);
+    this.bufferArray(this.glFgContext, this.rotationValues, this.fgRotationBuffer);
+    this.bufferArray(this.glFgContext, this.fgColorValues, this.fgcBuffer);
 
     this.enableVertexArray(this.glFgContext, this.fgVertexAttributeLocation, this.fgVertexBuffer, 2);
     this.enableVertexArray(this.glFgContext, this.fgCentreAttributeLocation, this.fgVertexCentreBuffer, 2);
     this.enableVertexArray(this.glFgContext, this.fgRotationAttributeLocation, this.fgRotationBuffer, 1);
     this.enableVertexArray(this.glFgContext, this.fgColorAttributeLocation, this.fgcBuffer, 4);
-    this.enableVertexArray(this.glFgContext, this.fgTextureAttributeLocation, this.textureBuffer, 2, this.textureAtlas);
+    this.enableVertexArray(this.glFgContext, this.fgTextureAttributeLocation, this.fgTextureBuffer, 2, this.textureAtlas);
 
-    this.glFgContext.drawArrays(this.glFgContext.TRIANGLES, 0, this.verts.length / 2);
+    this.glFgContext.drawArrays(this.glFgContext.TRIANGLES, 0, this.terminalTileVertices.length / 2);
 
     // Buffer all background data that changes frame-by-frame and draw to the background canvas.
-    this.bindAndBuffer(this.glBgContext, this.bgcs, this.bgcBuffer);
+    this.bufferArray(this.glBgContext, this.bgColorValues, this.bgcBuffer);
 
     this.enableVertexArray(this.glBgContext, this.bgVertexAttributeLocation, this.bgVertexBuffer, 2);
     this.enableVertexArray(this.glBgContext, this.bgColorAttributeLocation, this.bgcBuffer, 4);
 
-    this.glBgContext.drawArrays(this.glBgContext.TRIANGLES, 0, this.verts.length / 2);
+    this.glBgContext.drawArrays(this.glBgContext.TRIANGLES, 0, this.terminalTileVertices.length / 2);
   }
 
   public cacheTileVertices(x: number, y: number): Float32Array {

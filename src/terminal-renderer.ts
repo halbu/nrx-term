@@ -1,17 +1,24 @@
 import { NRXTerm } from './terminal';
-import { TextCache } from './text-cache';
+import { CharacterCache } from './character-cache';
 import { GLRenderer } from './gl-renderer';
 import { Color } from './color';
 
 export class TerminalRenderer {
   private terminal: NRXTerm;
-  private textCache: TextCache;
+  private characterCache: CharacterCache;
   private glRenderer: GLRenderer;
 
   constructor(terminal: NRXTerm) {
     this.terminal = terminal;
-    this.textCache = new TextCache(this.terminal.fontSize, this.terminal.fontFamily, this.terminal.tileWidth, this.terminal.tileHeight);
-    this.glRenderer = new GLRenderer(this.terminal, this.textCache, this.terminal.glFgCtx, this.terminal.glBgCtx);
+    
+    this.characterCache = new CharacterCache(
+      this.terminal.fontSize,
+      this.terminal.fontFamily,
+      this.terminal.tileWidth,
+      this.terminal.tileHeight
+    );
+
+    this.glRenderer = new GLRenderer(this.terminal, this.characterCache, this.terminal.glFgCtx, this.terminal.glBgCtx);
   }
 
   public drawToCanvas(): void {
