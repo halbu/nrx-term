@@ -87,6 +87,8 @@ export class NRXTerm {
   get fontSize(): number { return this._fontSize; }
   get tileWidth(): number { return this._tileWidth; }
   get tileHeight(): number { return this._tileHeight; }
+  get canvasWidth(): number { return this.tileWidth * this.w; }
+  get canvasHeight(): number { return this.tileHeight * this.h; }
 
   set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
 

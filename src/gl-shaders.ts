@@ -7,8 +7,8 @@ export class GlShaders {
     'attribute vec2 aUV;' +
     'attribute vec4 fragColor;' +
     'attribute float rotation;' +
-    'uniform float world_w;' +
-    'uniform float world_h;' +
+    'uniform float canvas_w;' +
+    'uniform float canvas_h;' +
     'varying vec2 vTex;' +
     'varying vec4 fCol;' +
     'void main(void) {' +
@@ -20,8 +20,8 @@ export class GlShaders {
     '  float npy = (px * sin(rotation)) + (py * cos(rotation)) + cVertex.y;' +
 
     // Take the rotated vertex and convert its co-ordinates to clipspace [-1, 1].
-    '  float nx = npx / world_w * 2.0 - 1.0;' +
-    '  float ny = -(npy / world_h * 2.0 - 1.0);' +
+    '  float nx = npx / canvas_w * 2.0 - 1.0;' +
+    '  float ny = -(npy / canvas_h * 2.0 - 1.0);' +
     
     // Pass everything along to the fragment shader.
     '  gl_Position = vec4(nx, ny, 0.0, 1.0);' +
@@ -42,13 +42,13 @@ export class GlShaders {
     'attribute vec2 aVertex;' +
     'attribute vec4 fragColor;' +
     'varying vec4 fCol;' +
-    'uniform float world_w;' +
-    'uniform float world_h;' +
+    'uniform float canvas_w;' +
+    'uniform float canvas_h;' +
     'void main(void) {' +
 
     // Convert this worldspace vertex's co-ordinates to clipspace [-1, 1].
-    '  float nx = aVertex.x / world_w * 2.0 - 1.0;' +
-    '  float ny = -(aVertex.y / world_h * 2.0 - 1.0);' +
+    '  float nx = aVertex.x / canvas_w * 2.0 - 1.0;' +
+    '  float ny = -(aVertex.y / canvas_h * 2.0 - 1.0);' +
 
     // Pass everything along to the frag shader.
     '  gl_Position = vec4(nx, ny, 0.0, 1.0);' +
