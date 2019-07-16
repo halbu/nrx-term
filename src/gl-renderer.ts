@@ -43,7 +43,7 @@ export class GLRenderer {
     textCache: CharacterCache,
     glFgCtx: WebGLRenderingContext,
     glBgCtx: WebGLRenderingContext
-    ) {
+  ) {
 
     this.terminal = terminal;
     this.characterCache = textCache;
@@ -52,29 +52,29 @@ export class GLRenderer {
 
     this.setupShaders();
 
-    const totalNumberOfPoints =   this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
+    const totalNumberOfPoints = this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
 
-    this.terminalTileVertices =   new Float32Array(totalNumberOfPoints);
+    this.terminalTileVertices = new Float32Array(totalNumberOfPoints);
     this.centrePointCoordinates = new Float32Array(totalNumberOfPoints);
-    this.rotationValues =         new Float32Array(totalNumberOfPoints / 2);
-    this.textureVertices =        new Float32Array(totalNumberOfPoints);
-    this.fgColorValues =          new Float32Array(totalNumberOfPoints * 2);
-    this.bgColorValues =          new Float32Array(totalNumberOfPoints * 2);
+    this.rotationValues = new Float32Array(totalNumberOfPoints / 2);
+    this.textureVertices = new Float32Array(totalNumberOfPoints);
+    this.fgColorValues = new Float32Array(totalNumberOfPoints * 2);
+    this.bgColorValues = new Float32Array(totalNumberOfPoints * 2);
 
-    this.fgVertexBuffer =         this.glFgCtx.createBuffer();
-    this.fgVertexCentreBuffer =   this.glFgCtx.createBuffer();
-    this.fgRotationBuffer =       this.glFgCtx.createBuffer();
-    this.fgTextureBuffer =        this.glFgCtx.createBuffer();
-    this.fgcBuffer =              this.glFgCtx.createBuffer();
+    this.fgVertexBuffer = this.glFgCtx.createBuffer();
+    this.fgVertexCentreBuffer = this.glFgCtx.createBuffer();
+    this.fgRotationBuffer = this.glFgCtx.createBuffer();
+    this.fgTextureBuffer = this.glFgCtx.createBuffer();
+    this.fgcBuffer = this.glFgCtx.createBuffer();
 
-    this.bgVertexBuffer =         this.glBgCtx.createBuffer();
-    this.bgcBuffer =              this.glBgCtx.createBuffer();
+    this.bgVertexBuffer = this.glBgCtx.createBuffer();
+    this.bgcBuffer = this.glBgCtx.createBuffer();
 
     this.initialiseData();
   }
 
   private readTextureFromCharacterCacheCanvas(): void {
-    this.textureAtlas = <WebGLTexture> this.glFgCtx.createTexture();
+    this.textureAtlas = <WebGLTexture>this.glFgCtx.createTexture();
     this.glFgCtx.bindTexture(this.glFgCtx.TEXTURE_2D, this.textureAtlas);
     this.glFgCtx.pixelStorei(this.glFgCtx.UNPACK_FLIP_Y_WEBGL, 1);
     this.glFgCtx.texParameteri(this.glFgCtx.TEXTURE_2D, this.glFgCtx.TEXTURE_MIN_FILTER, this.glFgCtx.LINEAR);
@@ -107,7 +107,7 @@ export class GLRenderer {
   private setupShaders(): void {
     // Set up foreground-layer shaders and program
 
-    this.fgProgram = <WebGLProgram> this.glFgCtx.createProgram();
+    this.fgProgram = <WebGLProgram>this.glFgCtx.createProgram();
     this.setupProgram(this.glFgCtx, GlShaders.vertexShaderFgSrc, GlShaders.fragmentShaderFgSrc, this.fgProgram);
 
     this.readTextureFromCharacterCacheCanvas();
@@ -119,21 +119,21 @@ export class GLRenderer {
     this.glFgCtx.useProgram(this.fgProgram);
 
     // Set up background-layer shaders and program
-    
-    this.bgProgram = <WebGLProgram> this.glBgCtx.createProgram();
+
+    this.bgProgram = <WebGLProgram>this.glBgCtx.createProgram();
     this.setupProgram(this.glBgCtx, GlShaders.vertexShaderBgSrc, GlShaders.fragmentShaderBgSrc, this.bgProgram);
 
     // Get all attribute locations
 
-    this.fgVertexAttributeLocation =    this.glFgCtx.getAttribLocation(this.fgProgram, 'aVertex');
-    this.fgTextureAttributeLocation =   this.glFgCtx.getAttribLocation(this.fgProgram, 'aUV');
-    this.fgColorAttributeLocation =     this.glFgCtx.getAttribLocation(this.fgProgram, 'fragColor');
-    this.fgCentreAttributeLocation =    this.glFgCtx.getAttribLocation(this.fgProgram, 'cVertex');
-    this.fgRotationAttributeLocation =  this.glFgCtx.getAttribLocation(this.fgProgram, 'rotation');
+    this.fgVertexAttributeLocation = this.glFgCtx.getAttribLocation(this.fgProgram, 'aVertex');
+    this.fgTextureAttributeLocation = this.glFgCtx.getAttribLocation(this.fgProgram, 'aUV');
+    this.fgColorAttributeLocation = this.glFgCtx.getAttribLocation(this.fgProgram, 'fragColor');
+    this.fgCentreAttributeLocation = this.glFgCtx.getAttribLocation(this.fgProgram, 'cVertex');
+    this.fgRotationAttributeLocation = this.glFgCtx.getAttribLocation(this.fgProgram, 'rotation');
 
-    this.bgVertexAttributeLocation =    this.glBgCtx.getAttribLocation(this.bgProgram, 'aVertex');
-    this.bgColorAttributeLocation =     this.glBgCtx.getAttribLocation(this.bgProgram, 'fragColor');
-    
+    this.bgVertexAttributeLocation = this.glBgCtx.getAttribLocation(this.bgProgram, 'aVertex');
+    this.bgColorAttributeLocation = this.glBgCtx.getAttribLocation(this.bgProgram, 'fragColor');
+
     // Set all unchanging uniforms
 
     this.glFgCtx.uniform1f(this.glFgCtx.getUniformLocation(this.fgProgram, 'canvas_w'), this.terminal.canvasWidth);
@@ -185,31 +185,31 @@ export class GLRenderer {
   }
 
   private cacheTileVertices(x: number, y: number): Float32Array {
-    let worldSpaceX = x * this.terminal.tileWidth;
-    let worldSpaceY = y * this.terminal.tileHeight;
+    let worldSpaceX = x * this.terminal.tilePixelWidth;
+    let worldSpaceY = y * this.terminal.tilePixelHeight;
 
     return new Float32Array([
       worldSpaceX, worldSpaceY,
-      worldSpaceX + this.terminal.tileWidth, worldSpaceY,
-      worldSpaceX + this.terminal.tileWidth, worldSpaceY + this.terminal.tileHeight,
+      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY,
+      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY + this.terminal.tilePixelHeight,
       worldSpaceX, worldSpaceY,
-      worldSpaceX, worldSpaceY + this.terminal.tileHeight,
-      worldSpaceX + this.terminal.tileWidth, worldSpaceY + this.terminal.tileHeight,
+      worldSpaceX, worldSpaceY + this.terminal.tilePixelHeight,
+      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY + this.terminal.tilePixelHeight,
     ]);
   }
 
   private cacheTileCentre(x: number, y: number): Float32Array {
-    let worldSpaceX = x * this.terminal.tileWidth;
-    let worldSpaceY = y * this.terminal.tileHeight;
+    let worldSpaceX = x * this.terminal.tilePixelWidth;
+    let worldSpaceY = y * this.terminal.tilePixelHeight;
 
     // There has to be a less stupid way than this
     return new Float32Array([
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2,
-      worldSpaceX + this.terminal.tileWidth / 2, worldSpaceY + this.terminal.tileHeight / 2
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
+      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2
     ]);
   }
 
@@ -223,7 +223,7 @@ export class GLRenderer {
     const rotationIndex = index / 2;
 
     this.textureVertices.set(this.characterCache.getCharacterVertices(char), index);
-    
+
     for (let i = 0; i < 24; i += 4) {
       this.fgColorValues[fgcIndex + i + 0] = r;
       this.fgColorValues[fgcIndex + i + 1] = g;

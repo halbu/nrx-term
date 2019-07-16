@@ -9,17 +9,12 @@ export class NRXTerm {
   private _w: number;
   private _h: number;
 
-  private _tileWidth: number;
-  private _tileHeight: number;
+  private _tilePixelWidth: number;
+  private _tilePixelHeight: number;
   private _fontFamily: string;
   private _fontSize: number;
 
-  private _alwaysUppercase = false; // Implement this
-
   private tilemap: Array<Array<NRXTile>>;
-
-  private _glFgCtx: WebGLRenderingContext;
-  private _glBgCtx: WebGLRenderingContext;
 
   private inputHandler: InputHandler;
   private terminalRenderer: TerminalRenderer;
@@ -29,62 +24,41 @@ export class NRXTerm {
   private readonly COLOR_DIRECTIVE_LENGTH = 8;
 
   /**
-   * @param  {number} x The X position of the terminal within the canvas (pixels from left edge)
-   * @param  {number} y The Y position of the terminal within the canvas (pixels from top edge)
    * @param  {number} w The width of the terminal, specified in terminal tiles
    * @param  {number} h The height of the terminal, specified in terminal tiles
    * @param  {CanvasRenderingContext2D} ctx The rendering context of the canvas that the terminal will be drawn to
    * @param  {string} fontFamily The font-family that will be used to draw characters to the terminal
    * @param  {number} fontSize Font size, in points, that will be used to draw characters to the terminal
-   * @param  {number} tileWidth The width of a terminal tile, in pixels
-   * @param  {number} tileHeight The height of a terminal tile, in pixels
+   * @param  {number} tilePixelWidth The width of a terminal tile, in pixels
+   * @param  {number} tilePixelHeight The height of a terminal tile, in pixels
    */
   constructor(el: HTMLElement, w: number, h: number,
-    fontFamily: string, fontSize: number, tileWidth: number, tileHeight: number) {
-
-    const pixelWidth = w * tileWidth;
-    const pixelHeight = h * tileHeight;
-
-    el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
-    el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + pixelHeight + '; width: ' + pixelWidth + '; text-align: center;"></canvas>');
-    let glFgCnv = <HTMLCanvasElement> document.getElementById('glBgCtx');
-    let glBgCnv = <HTMLCanvasElement> document.getElementById('glFgCtx');
-
-    [glFgCnv, glBgCnv].forEach(c => {
-      c.width = pixelWidth;
-      c.height = pixelHeight;
-    });
-
-    this._glFgCtx = <WebGLRenderingContext> glFgCnv.getContext('webgl');
-    this._glBgCtx = <WebGLRenderingContext> glBgCnv.getContext('webgl');
+    fontFamily: string, fontSize: number, tilePixelWidth: number, tilePixelHeight: number) {
 
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
     this._w = w;
     this._h = h;
-    this._tileWidth = tileWidth;
-    this._tileHeight = tileHeight;
+    this._tilePixelWidth = tilePixelWidth;
+    this._tilePixelHeight = tilePixelHeight;
 
-    this.inputHandler = new InputHandler(this._glFgCtx.canvas);
-    this.terminalRenderer = new TerminalRenderer(this);
+    this.terminalRenderer = new TerminalRenderer(this, el, w, h, tilePixelWidth, tilePixelHeight);
+    this.inputHandler = new InputHandler(this.terminalRenderer.inputCanvas);
 
     this.tilemap = new Array<Array<NRXTile>>();
     this.initialiseTiles();
   }
 
-  // Getters/setters for private members
+  // Getters for private members. The user may want to refer back to these
+  // properties after initialisation, but we should not allow them to change.
   get w(): number { return this._w; }
   get h(): number { return this._h; }
-  get glFgCtx(): WebGLRenderingContext { return this._glFgCtx; }
-  get glBgCtx(): WebGLRenderingContext { return this._glBgCtx; }
   get fontFamily(): string { return this._fontFamily; }
   get fontSize(): number { return this._fontSize; }
-  get tileWidth(): number { return this._tileWidth; }
-  get tileHeight(): number { return this._tileHeight; }
-  get canvasWidth(): number { return this.tileWidth * this.w; }
-  get canvasHeight(): number { return this.tileHeight * this.h; }
-
-  set alwaysUppercase(au: boolean) { this._alwaysUppercase = au; }
+  get tilePixelWidth(): number { return this._tilePixelWidth; }
+  get tilePixelHeight(): number { return this._tilePixelHeight; }
+  get canvasWidth(): number { return this.tilePixelWidth * this.w; }
+  get canvasHeight(): number { return this.tilePixelHeight * this.h; }
 
   /**
    * Sets up the 2D array of Tiles that represent the entire terminal.
@@ -334,7 +308,7 @@ export class NRXTerm {
   }
 
   /**
-   * Returns a Point representing the 2D co-ordinates of the mouse within the canvas.
+   * Returns a Point representing the 2D pixel co-ordinates of the mouse within the canvas.
    * @returns Point
    */
   get mouse(): Point {
@@ -383,15 +357,13 @@ export class NRXTerm {
    */
   private canvasToTerminal(p: Point): Point {
     return new Point(
-      Math.floor(p.x / this.tileWidth),
-      Math.floor(p.y / this.tileHeight)
+      Math.floor(p.x / this.tilePixelWidth),
+      Math.floor(p.y / this.tilePixelHeight)
     );
   }
 
   /**
    * Returns a Point representing the mouse's X-Y position in terms of tiles within the terminal.
-   * FIXME: This function currently assumes that the terminal's upper-left point is at 0,0 on the canvas, which is not
-   * guaranteed to be true.
    * @returns Point
    */
   get mouseTerminalPosition(): Point {
