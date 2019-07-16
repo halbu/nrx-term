@@ -6,8 +6,6 @@ import { TerminalRenderer } from './terminal-renderer';
 import { Color } from './color';
 
 export class NRXTerm {
-  private _x: number;
-  private _y: number;
   private _w: number;
   private _h: number;
 
@@ -41,7 +39,7 @@ export class NRXTerm {
    * @param  {number} tileWidth The width of a terminal tile, in pixels
    * @param  {number} tileHeight The height of a terminal tile, in pixels
    */
-  constructor(el: HTMLElement, x: number, y: number, w: number, h: number,
+  constructor(el: HTMLElement, w: number, h: number,
     fontFamily: string, fontSize: number, tileWidth: number, tileHeight: number) {
 
     const pixelWidth = w * tileWidth;
@@ -62,8 +60,6 @@ export class NRXTerm {
 
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
-    this._x = 0;
-    this._y = 0;
     this._w = w;
     this._h = h;
     this._tileWidth = tileWidth;
@@ -77,8 +73,6 @@ export class NRXTerm {
   }
 
   // Getters/setters for private members
-  get x(): number { return this._x; }
-  get y(): number { return this._y; }
   get w(): number { return this._w; }
   get h(): number { return this._h; }
   get glFgCtx(): WebGLRenderingContext { return this._glFgCtx; }
@@ -252,8 +246,8 @@ export class NRXTerm {
                   currentTile.setFgc(baseColor.r, baseColor.g, baseColor.b);
                 }
                 currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
-                                        // terminal with characters that inherit any existing rotation on the
-                                        // underlying tile...
+                // terminal with characters that inherit any existing rotation on the
+                // underlying tile...
               }
 
               xOffset++;
