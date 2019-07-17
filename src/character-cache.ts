@@ -42,6 +42,10 @@ export class CharacterCache {
 
     this.quadMap = new Map<string, Float32Array>();
 
+    this.prerenderText();
+  }
+
+  private prerenderText(): void {
     this.context.font = '' + this.fontSize + "px '" + this.fontFamily + "'";
     this.context.textBaseline = 'top';
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);

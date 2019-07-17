@@ -4,6 +4,7 @@ import { Point } from './point';
 import { InputConstants } from './input-constants';
 import { TerminalRenderer } from './terminal-renderer';
 import { Color } from './color';
+import { TextDrawingConstants } from './text-drawing-constants';
 
 export class NRXTerm {
   private _w: number;
@@ -14,10 +15,10 @@ export class NRXTerm {
   private _fontFamily: string;
   private _fontSize: number;
 
-  private tilemap: Array<Array<NRXTile>>;
+  private _tileGrid: Array<Array<NRXTile>>;
 
-  private inputHandler: InputHandler;
-  private terminalRenderer: TerminalRenderer;
+  private _inputHandler: InputHandler;
+  private _terminalRenderer: TerminalRenderer;
 
   private readonly COLOR_DIRECTIVE_INDICATOR = '$';
   private readonly LINE_BREAK_INDICATOR = '^';
@@ -42,10 +43,10 @@ export class NRXTerm {
     this._tilePixelWidth = tilePixelWidth;
     this._tilePixelHeight = tilePixelHeight;
 
-    this.terminalRenderer = new TerminalRenderer(this, el, w, h, tilePixelWidth, tilePixelHeight);
-    this.inputHandler = new InputHandler(this.terminalRenderer.inputCanvas);
+    this._terminalRenderer = new TerminalRenderer(this, el, w, h, tilePixelWidth, tilePixelHeight);
+    this._inputHandler = new InputHandler(this._terminalRenderer.inputCanvas);
 
-    this.tilemap = new Array<Array<NRXTile>>();
+    this._tileGrid = new Array<Array<NRXTile>>();
     this.initialiseTiles();
   }
 
@@ -65,11 +66,11 @@ export class NRXTerm {
    * @returns void
    */
   private initialiseTiles(): void {
-    this.tilemap = new Array<Array<NRXTile>>();
+    this._tileGrid = new Array<Array<NRXTile>>();
     for (let i = 0; i !== this._w; ++i) {
-      this.tilemap[i] = Array<NRXTile>();
+      this._tileGrid[i] = Array<NRXTile>();
       for (let j = 0; j !== this._h; ++j) {
-        this.tilemap[i][j] = new NRXTile();
+        this._tileGrid[i][j] = new NRXTile();
       }
     }
   }
@@ -79,7 +80,7 @@ export class NRXTerm {
    * @returns {void}
    */
   public render(): void {
-    this.terminalRenderer.drawToCanvas();
+    this._terminalRenderer.drawToCanvas();
   }
 
   /**
@@ -104,7 +105,7 @@ export class NRXTerm {
         + x + ':' + y + ', terminal size ' + this._w + ':' + this._h + '.');
     }
 
-    return this.tilemap[x][y];
+    return this._tileGrid[x][y];
   }
 
   /**
@@ -112,15 +113,15 @@ export class NRXTerm {
    * whitespace) and sets the background color of all tiles within the rectangle to the specified color c
    * @param  {number} x X-position of the top-left point of the rectangle to fill
    * @param  {number} y Y-position of the top-left point of the rectangle to fill
-   * @param  {number} w Width in tiles of the rectangle to fill
-   * @param  {number} h Height in tiles of the rectangle to fill
-   * @param  {string} c Color in hex to use to fill the rectangle. Defaults to black
+   * @param  {number} width Width in tiles of the rectangle to fill
+   * @param  {number} height Height in tiles of the rectangle to fill
+   * @param  {string} fillColor Color (as hex string) to fill the rectangle with - black if this param is null.
    * @returns void
    */
-  public fillRect(x: number, y: number, w: number, h: number, c?: string): void {
-    let fillCol = (c) ? Color.hexToRgb(c) : new Color(0, 0, 0);
-    for (let i = 0; i !== w; ++i) {
-      for (let j = 0; j !== h; ++j) {
+  public fillRect(x: number, y: number, width: number, height: number, fillColor?: string): void {
+    let fillCol = (fillColor) ? Color.hexToRgb(fillColor) : new Color(0, 0, 0);
+    for (let i = 0; i !== width; ++i) {
+      for (let j = 0; j !== height; ++j) {
         if (this.withinTerminal(i, j)) {
           const currentTile = this.tileAt(i + x, j + y);
           currentTile.setBgc(fillCol.r, fillCol.g, fillCol.b);
@@ -141,11 +142,11 @@ export class NRXTerm {
    * @param  {number} y Y-position to begin writing the string at
    * @param  {string} color (Optional) The color of the text. Defaults to white
    * @param  {number} width (Optional) The maximum width of a line in characters before wrapping.
-   * @param  {boolean} rAlign (Optional) If true, right-align the text to the margin at (x + width). Requires the width
-   * parameter to have been specified.
+   * @param  {number} alignment (Optional) An option defined by the TextDrawingConstants.Alignment enum that governs
+   * whether the text will be drawn aligned to the left, right or center. Defaults to left alignment if null.
    * @returns {number}
    */
-  public drawString(str: string, x: number, y: number, color?: string, width?: number, rAlign?: boolean): number {
+  public drawString(str: string, x: number, y: number, color?: string, width?: number, alignment?: number): number {
     let wordXPosition = 0;
     let yOffset = 0;
     width = width || Number.MAX_VALUE;
@@ -179,11 +180,16 @@ export class NRXTerm {
       for (let l = 0; l !== lines.length; ++l) {
         const line = lines[l];
         wordXPosition = 0;
-        if (rAlign && width < Number.MAX_VALUE) { // Is this second conditional necessary?
-          const lineWidth = line.map(wrd => {
-            return this.lengthWithoutColorDirectives(wrd);
+        if (alignment === TextDrawingConstants.Alignment.Right && width < Number.MAX_VALUE) {
+          const lineWidth = line.map(word => {
+            return this.lengthWithoutColorDirectives(word);
           }).reduce((a, b) => a + b) + (line.length - 1);
           wordXPosition += width - lineWidth;
+        } else if (alignment === TextDrawingConstants.Alignment.Center && width < Number.MAX_VALUE) {
+          const lineWidth = line.map(word => {
+            return this.lengthWithoutColorDirectives(word);
+          }).reduce((a, b) => a + b) + (line.length - 1);
+          wordXPosition += Math.floor(width / 2 - lineWidth / 2);
         }
 
         for (let w = 0; w !== line.length; ++w) {
@@ -272,9 +278,9 @@ export class NRXTerm {
    * @returns void
    */
   public nextFrame(): void {
-    this.inputHandler.mouseMovedThisFrame = false;
-    this.inputHandler.inputsThisFrame = new Array<number>();
-    this.inputHandler.dragCompletedThisFrame = false;
+    this._inputHandler.mouseMovedThisFrame = false;
+    this._inputHandler.inputsThisFrame = new Array<number>();
+    this._inputHandler.dragCompletedThisFrame = false;
   }
 
   /**
@@ -293,7 +299,7 @@ export class NRXTerm {
    * @returns Array
    */
   get inputs(): Array<number> {
-    return this.inputHandler.inputsThisFrame;
+    return this._inputHandler.inputsThisFrame;
   }
 
   /**
@@ -304,7 +310,7 @@ export class NRXTerm {
    */
   // tslint:disable-next-line:no-any
   get keyboard(): any {
-    return this.inputHandler.keyboardMap;
+    return this._inputHandler.keyboardMap;
   }
 
   /**
@@ -312,7 +318,7 @@ export class NRXTerm {
    * @returns Point
    */
   get mouse(): Point {
-    return this.inputHandler.mouse;
+    return this._inputHandler.mouse;
   }
 
   /**
@@ -323,9 +329,9 @@ export class NRXTerm {
    * @returns number
    */
   get dragStatus(): number {
-    if (this.inputHandler.isActiveDrag()) {
+    if (this._inputHandler.isActiveDrag()) {
       return InputConstants.Mouse.DragStatus.Active;
-    } else if (this.inputHandler.dragCompletedThisFrame) {
+    } else if (this._inputHandler.dragCompletedThisFrame) {
       return InputConstants.Mouse.DragStatus.Finished;
     } else {
       return InputConstants.Mouse.DragStatus.None;
@@ -340,8 +346,8 @@ export class NRXTerm {
   get dragPoints(): [Point, Point] {
     if (this.dragStatus !== InputConstants.Mouse.DragStatus.None) {
       return [
-        this.canvasToTerminal(this.inputHandler.dragOrigin),
-        this.canvasToTerminal(this.inputHandler.mouse)
+        this.canvasToTerminal(this._inputHandler.dragOrigin),
+        this.canvasToTerminal(this._inputHandler.mouse)
       ];
     } else {
       return [new Point(-1, -1), new Point(-1, -1)];
@@ -367,7 +373,7 @@ export class NRXTerm {
    * @returns Point
    */
   get mouseTerminalPosition(): Point {
-    return this.canvasToTerminal(this.inputHandler.mouse);
+    return this.canvasToTerminal(this._inputHandler.mouse);
   }
 
   /**
@@ -380,5 +386,17 @@ export class NRXTerm {
   // tslint:disable-next-line:no-any
   static get Input(): any {
     return InputConstants;
+  }
+
+  /**
+   * Returns a JavaScript object literal containing constant values for all keyboard keys, mouse buttons, and mouse
+   * actions, organised under the two subheadings Input.Mouse and Input.Keys. To be used in (if desired!) place of
+   * integer keycodes by dependent applications when checking the state of a particular mouse button, action, or
+   * keyboard key.
+   * @returns any
+   */
+  // tslint:disable-next-line:no-any
+  static get TextAlignment(): any {
+    return TextDrawingConstants.Alignment;
   }
 }
