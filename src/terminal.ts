@@ -24,9 +24,9 @@ export class NRXTerm {
   private readonly COLOR_DIRECTIVE_LENGTH = 8;
 
   /**
+   * @param  {HTMLElement} el The HTML Element that the terminal will attach itself to and render itself within
    * @param  {number} w The width of the terminal, specified in terminal tiles
    * @param  {number} h The height of the terminal, specified in terminal tiles
-   * @param  {CanvasRenderingContext2D} ctx The rendering context of the canvas that the terminal will be drawn to
    * @param  {string} fontFamily The font-family that will be used to draw characters to the terminal
    * @param  {number} fontSize Font size, in points, that will be used to draw characters to the terminal
    * @param  {number} tilePixelWidth The width of a terminal tile, in pixels

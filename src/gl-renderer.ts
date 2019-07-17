@@ -42,8 +42,7 @@ export class GLRenderer {
     terminal: NRXTerm,
     textCache: CharacterCache,
     glFgCtx: WebGLRenderingContext,
-    glBgCtx: WebGLRenderingContext
-  ) {
+    glBgCtx: WebGLRenderingContext) {
 
     this.terminal = terminal;
     this.characterCache = textCache;
