@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2016",
-    "module": "commonjs",
+    "module": "umd",
     "declaration": true,
     "outDir": "./lib",
     "noImplicitAny": false,
