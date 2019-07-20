@@ -2,7 +2,9 @@
 
 ### About
 
-`nrx-term` is a hardware-accelerated, browser-based terminal emulator and input handler.
+`nrx-term` is a hardware-accelerated, browser-based terminal emulator for game development.
+
+<img src="https://raw.githubusercontent.com/halbu/nrx-term/master/img/nrx1.gif" width="45%"></img> <img src="https://raw.githubusercontent.com/halbu/nrx-term/master/img/nrx2.gif" width="45%"></img> 
 
 ### Goals
 
@@ -10,10 +12,10 @@
 
 To this end, `nrx-term` offers:
 
-* Hardware-accelerated rendering - render huge terminals at 60FPS with plenty of CPU to spare
+* Hardware-accelerated rendering - render huge terminals at 60+ FPS with plenty of CPU to spare
 * Out-of-the-box handling of keyboard and mouse input
 * Support for true color and character rotation
-* Small API surface, simple to use
+* Small API surface, simple to understand and use (hopefully)
 
 `nrx-term` is purely for terminal display and input handling, and is not opinionated about how you build your game.
 
