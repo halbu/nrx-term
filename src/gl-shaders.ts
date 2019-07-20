@@ -30,12 +30,20 @@ export class GlShaders {
     '}';
 
     public static  fragmentShaderFgSrc =
-    'precision mediump float;' +
+    'precision highp float;' +
     'varying vec2 vTex;' +
     'varying vec4 fCol;' +
     'uniform sampler2D sampler0;' +
     'void main(void){' +
-    '  gl_FragColor = vec4(fCol.x, fCol.y, fCol.z, texture2D(sampler0, vTex).w);' +
+
+    // Test the alpha of the texel to see if this pixel is part of a glyph.
+    // Discard it if not in order that when rotating characters we do not
+    // unintentionally affect the alpha channel of adjacent glyphs
+    '  if (texture2D(sampler0, vTex).w < 0.1) {' +
+    '    discard;' +
+    '  } else {' +
+    '    gl_FragColor = vec4(fCol.x, fCol.y, fCol.z, texture2D(sampler0, vTex).w);' +
+    '  }' +
     '}';
 
     public static  vertexShaderBgSrc =
