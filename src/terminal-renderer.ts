@@ -46,7 +46,6 @@ export class TerminalRenderer {
         const t = this.terminal.cell(i, j);
         this.glRenderer.setForegroundData(i, j, t.char, t.fgc.r / 255, t.fgc.g / 255, t.fgc.b / 255, t.rot);
         this.glRenderer.setBackgroundData(i, j, t.bgc.r / 255, t.bgc.g / 255, t.bgc.b / 255);
-        t.setBga(0.0);
       }
     }
 

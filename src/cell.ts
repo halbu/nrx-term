@@ -5,7 +5,6 @@ export class NRXCell {
   private _char = '?';
   private _fgc = new Color(255, 0, 255);
   private _bgc = new Color(255, 0, 255);
-  private _bga = 0.0;
   private _rot = 0;
 
   constructor() {}
@@ -42,27 +41,69 @@ export class NRXCell {
   }
 
   // Methods that allow the display characteristics of the cell to be modified.
+
+  /**
+   * Set the foreground color (in other words, the color of the glyph) of this Cell. Color values must be integers
+   * between 0 and 255.
+   * @param  {number} r
+   * @param  {number} g
+   * @param  {number} b
+   * @returns void
+   */
   public setFgc(r: number, g: number, b: number): void {
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+      throw new Error('Color value outside the acceptable range of [0..255] was passed to setFgc method.');
+    }
+
     this._fgc.r = r;
     this._fgc.g = g;
     this._fgc.b = b;
   }
   
+  /**
+   * Set the background color (in other words, the fill color) of this Cell. Color values must be integers between
+   * 0 and 255.
+   * @param  {number} r
+   * @param  {number} g
+   * @param  {number} b
+   * @returns void
+   */
   public setBgc(r: number, g: number, b: number): void {
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+      throw new Error('Color value outside the acceptable range of [0..255] was passed to setBgc method.');
+    }
+    
     this._bgc.r = r;
     this._bgc.g = g;
     this._bgc.b = b;
   }
   
-  public setBga(bga: number): void { this._bga = bga; }
-  public setChar(char: string): void { this._char = char; }
+  /**
+   * Set the display character of this Cell. The string representing the character must naturally be of length 1.
+   * @param  {string} char
+   * @returns void
+   */
+  public setChar(char: string): void {
+    if (char.length > 1) {
+      throw new Error('String of length greater than 1 (' + char + ') passed as cell character.');
+    }
 
-  // Rotation is in radians. Zero (or multiples of 2pi) equal no rotation. Positive rotation is counterclockwise.
-  public setRot(rot: number): void { this._rot = rot; }
+    this._char = char;
+  }
 
+  /**
+   * Set the angle to which the display character of this Cell will be rotated. Rotation must be specified in radians:
+   * pi = 180 degrees, zero (or multiples of 2*pi) equal no rotation.
+   * @param  {number} rot
+   * @returns void
+   */
+  public setRot(rot: number): void {
+    this._rot = rot;
+  }
+
+  // Read-only getters for cell display characteristics.
   get fgc(): Color { return this._fgc; }
   get bgc(): Color { return this._bgc; }
-  get bga(): number { return this._bga; }
   get char(): string { return this._char; }
   get rot(): number { return this._rot; }
 }
