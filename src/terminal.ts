@@ -122,7 +122,7 @@ export class NRXTerm {
     let fillCol = (fillColor) ? Color.hexToRgb(fillColor) : new Color(0, 0, 0);
     for (let i = 0; i !== width; ++i) {
       for (let j = 0; j !== height; ++j) {
-        if (this.withinTerminal(i, j)) {
+        if (this.withinTerminal(i + x, j + y)) {
           const currentCell = this.cell(i + x, j + y);
           currentCell.setBgc(fillCol.r, fillCol.g, fillCol.b);
           currentCell.setChar(' ');
