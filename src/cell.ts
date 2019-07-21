@@ -1,7 +1,7 @@
 import { Lerp } from './lerp';
 import { Color } from './color';
 
-export class NRXTile {
+export class NRXCell {
   private _char = '?';
   private _fgc = new Color(255, 0, 255);
   private _bgc = new Color(255, 0, 255);
@@ -41,7 +41,7 @@ export class NRXTile {
     this._fgc = Lerp.lerpColor(new Color(r, g, b), this._fgc, proportion);
   }
 
-  // Methods that allow the display characteristics of the tile to be modified.
+  // Methods that allow the display characteristics of the cell to be modified.
   public setFgc(r: number, g: number, b: number): void {
     this._fgc.r = r;
     this._fgc.g = g;

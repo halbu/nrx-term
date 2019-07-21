@@ -1,4 +1,4 @@
-import { NRXTile } from './tile';
+import { NRXCell } from './cell';
 import { InputHandler } from './input-handler';
 import { Point } from './point';
 import { InputConstants } from './input-constants';
@@ -10,12 +10,12 @@ export class NRXTerm {
   private _w: number;
   private _h: number;
 
-  private _tilePixelWidth: number;
-  private _tilePixelHeight: number;
+  private _cellPixelWidth: number;
+  private _cellPixelHeight: number;
   private _fontFamily: string;
   private _fontSize: number;
 
-  private _tileGrid: Array<Array<NRXTile>>;
+  private _cellGrid: Array<Array<NRXCell>>;
 
   private _inputHandler: InputHandler;
   private _terminalRenderer: TerminalRenderer;
@@ -26,28 +26,28 @@ export class NRXTerm {
 
   /**
    * @param  {HTMLElement} el The HTML Element that the terminal will attach itself to and render itself within
-   * @param  {number} w The width of the terminal, specified in terminal tiles
-   * @param  {number} h The height of the terminal, specified in terminal tiles
+   * @param  {number} w The width of the terminal, specified in terminal cells
+   * @param  {number} h The height of the terminal, specified in terminal cells
    * @param  {string} fontFamily The font-family that will be used to draw characters to the terminal
    * @param  {number} fontSize Font size, in points, that will be used to draw characters to the terminal
-   * @param  {number} tilePixelWidth The width of a terminal tile, in pixels
-   * @param  {number} tilePixelHeight The height of a terminal tile, in pixels
+   * @param  {number} cellPixelWidth The width of a terminal cell, in pixels
+   * @param  {number} cellPixelHeight The height of a terminal cell, in pixels
    */
   constructor(el: HTMLElement, w: number, h: number,
-    fontFamily: string, fontSize: number, tilePixelWidth: number, tilePixelHeight: number) {
+    fontFamily: string, fontSize: number, cellPixelWidth: number, cellPixelHeight: number) {
 
     this._fontSize = fontSize;
     this._fontFamily = fontFamily;
     this._w = w;
     this._h = h;
-    this._tilePixelWidth = tilePixelWidth;
-    this._tilePixelHeight = tilePixelHeight;
+    this._cellPixelWidth = cellPixelWidth;
+    this._cellPixelHeight = cellPixelHeight;
 
-    this._terminalRenderer = new TerminalRenderer(this, el, w, h, tilePixelWidth, tilePixelHeight);
+    this._terminalRenderer = new TerminalRenderer(this, el, w, h, cellPixelWidth, cellPixelHeight);
     this._inputHandler = new InputHandler(this._terminalRenderer.inputCanvas);
 
-    this._tileGrid = new Array<Array<NRXTile>>();
-    this.initialiseTiles();
+    this._cellGrid = new Array<Array<NRXCell>>();
+    this.initialiseCells();
   }
 
   // Getters for private members. The user may want to refer back to these
@@ -56,21 +56,21 @@ export class NRXTerm {
   get h(): number { return this._h; }
   get fontFamily(): string { return this._fontFamily; }
   get fontSize(): number { return this._fontSize; }
-  get tilePixelWidth(): number { return this._tilePixelWidth; }
-  get tilePixelHeight(): number { return this._tilePixelHeight; }
-  get canvasWidth(): number { return this.tilePixelWidth * this.w; }
-  get canvasHeight(): number { return this.tilePixelHeight * this.h; }
+  get cellPixelWidth(): number { return this._cellPixelWidth; }
+  get cellPixelHeight(): number { return this._cellPixelHeight; }
+  get canvasWidth(): number { return this.cellPixelWidth * this.w; }
+  get canvasHeight(): number { return this.cellPixelHeight * this.h; }
 
   /**
-   * Sets up the 2D array of Tiles that represent the entire terminal.
+   * Sets up the 2D array of Cells that represent the entire terminal.
    * @returns void
    */
-  private initialiseTiles(): void {
-    this._tileGrid = new Array<Array<NRXTile>>();
+  private initialiseCells(): void {
+    this._cellGrid = new Array<Array<NRXCell>>();
     for (let i = 0; i !== this._w; ++i) {
-      this._tileGrid[i] = Array<NRXTile>();
+      this._cellGrid[i] = Array<NRXCell>();
       for (let j = 0; j !== this._h; ++j) {
-        this._tileGrid[i][j] = new NRXTile();
+        this._cellGrid[i][j] = new NRXCell();
       }
     }
   }
@@ -94,27 +94,27 @@ export class NRXTerm {
   }
 
   /**
-   * Returns the tile object at the specified location within the terminal.
-   * @param  {number} x X-position of tile to retrieve
-   * @param  {number} y X-position of tile to retrieve
-   * @returns {NRXTile} The tile object at the specified location.
+   * Returns the cell object at the specified location within the terminal.
+   * @param  {number} x X-position of cell to retrieve
+   * @param  {number} y X-position of cell to retrieve
+   * @returns {NRXCell} The cell object at the specified location.
    */
-  public tileAt(x: number, y: number): NRXTile {
+  public cell(x: number, y: number): NRXCell {
     if (!this.withinTerminal(x, y)) {
-      throw new Error('Attempted to retrieve a tile that was outside the terminal (requested co-ordinates: '
+      throw new Error('Attempted to retrieve a cell that was outside the terminal (requested co-ordinates: '
         + x + ':' + y + ', terminal size ' + this._w + ':' + this._h + '.');
     }
 
-    return this._tileGrid[x][y];
+    return this._cellGrid[x][y];
   }
 
   /**
    * Blanks a rectangular section of the terminal (setting all foreground characters within this rectangle to
-   * whitespace) and sets the background color of all tiles within the rectangle to the specified color c
+   * whitespace) and sets the background color of all cells within the rectangle to the specified color c
    * @param  {number} x X-position of the top-left point of the rectangle to fill
    * @param  {number} y Y-position of the top-left point of the rectangle to fill
-   * @param  {number} width Width in tiles of the rectangle to fill
-   * @param  {number} height Height in tiles of the rectangle to fill
+   * @param  {number} width Width in cells of the rectangle to fill
+   * @param  {number} height Height in cells of the rectangle to fill
    * @param  {string} fillColor Color (as hex string) to fill the rectangle with - black if this param is null.
    * @returns void
    */
@@ -123,9 +123,9 @@ export class NRXTerm {
     for (let i = 0; i !== width; ++i) {
       for (let j = 0; j !== height; ++j) {
         if (this.withinTerminal(i, j)) {
-          const currentTile = this.tileAt(i + x, j + y);
-          currentTile.setBgc(fillCol.r, fillCol.g, fillCol.b);
-          currentTile.setChar(' ');
+          const currentCell = this.cell(i + x, j + y);
+          currentCell.setBgc(fillCol.r, fillCol.g, fillCol.b);
+          currentCell.setChar(' ');
         }
       }
     }
@@ -217,17 +217,17 @@ export class NRXTerm {
               const cx = x + wordXPosition + xOffset;
               const cy = y + yOffset;
               if (this.withinTerminal(cx, cy)) {
-                const currentTile = this.tileAt(cx, cy);
+                const currentCell = this.cell(cx, cy);
 
-                currentTile.setChar(word[i]);
+                currentCell.setChar(word[i]);
                 if (isColorSwitched) {
-                  currentTile.setFgc(currentColor.r, currentColor.g, currentColor.b);
+                  currentCell.setFgc(currentColor.r, currentColor.g, currentColor.b);
                 } else {
-                  currentTile.setFgc(baseColor.r, baseColor.g, baseColor.b);
+                  currentCell.setFgc(baseColor.r, baseColor.g, baseColor.b);
                 }
-                currentTile.setRot(0);  // My assumption is that the user will never want to draw a string to the
+                currentCell.setRot(0);  // My assumption is that the user will never want to draw a string to the
                 // terminal with characters that inherit any existing rotation on the
-                // underlying tile...
+                // underlying cell...
               }
 
               xOffset++;
@@ -236,7 +236,7 @@ export class NRXTerm {
             // If this is not the last word of this line, and we have sufficient room to do so, add a space
             if (i === word.length - 1 && w !== line.length - 1) {
               if (this.withinTerminal(x + wordXPosition + xOffset, y + yOffset)) {
-                this.tileAt(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
+                this.cell(x + wordXPosition + xOffset, y + yOffset).setChar(' ');
                 wordXPosition++;
               }
             }
@@ -339,7 +339,7 @@ export class NRXTerm {
   }
 
   /**
-   * Returns a tuple of Points representing the start and end tiles of a mouse-drag action, or null if no mouse-drag
+   * Returns a tuple of Points representing the start and end cells of a mouse-drag action, or null if no mouse-drag
    * action is currently in progress.
    * @returns [Point, Point]
    */
@@ -356,20 +356,20 @@ export class NRXTerm {
 
   /**
    * Accepts a Point containing 2D pixel co-ordinates with the terminal's canvas, and returns a Point containing the 2D
-   * co-ordinates of the terminal tile that those pixel co-ordinates are within.
+   * co-ordinates of the terminal cell that those pixel co-ordinates are within.
    * co-ordinates.
-   * @param  {Point} p The Point containing the pixel co-ordinates to be converted to a tile position.
+   * @param  {Point} p The Point containing the pixel co-ordinates to be converted to a cell position.
    * @returns Point
    */
   private canvasToTerminal(p: Point): Point {
     return new Point(
-      Math.floor(p.x / this.tilePixelWidth),
-      Math.floor(p.y / this.tilePixelHeight)
+      Math.floor(p.x / this.cellPixelWidth),
+      Math.floor(p.y / this.cellPixelHeight)
     );
   }
 
   /**
-   * Returns a Point representing the mouse's X-Y position in terms of tiles within the terminal.
+   * Returns a Point representing the mouse's X-Y position in terms of cells within the terminal.
    * @returns Point
    */
   get mouseTerminalPosition(): Point {

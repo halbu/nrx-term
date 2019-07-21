@@ -29,7 +29,7 @@ export class GLRenderer {
   private fgcBuffer: WebGLBuffer;
   private bgcBuffer: WebGLBuffer;
 
-  private terminalTileVertices: Float32Array;
+  private terminalCellVertices: Float32Array;
   private centrePointCoordinates: Float32Array;
   private rotationValues: Float32Array;
   private textureVertices: Float32Array;
@@ -53,7 +53,7 @@ export class GLRenderer {
 
     const totalNumberOfPoints = this.terminal.w * this.terminal.h * this.FLOATS_PER_QUAD;
 
-    this.terminalTileVertices = new Float32Array(totalNumberOfPoints);
+    this.terminalCellVertices = new Float32Array(totalNumberOfPoints);
     this.centrePointCoordinates = new Float32Array(totalNumberOfPoints);
     this.rotationValues = new Float32Array(totalNumberOfPoints / 2);
     this.textureVertices = new Float32Array(totalNumberOfPoints);
@@ -145,8 +145,8 @@ export class GLRenderer {
     for (let i = 0; i !== this.terminal.w; ++i) {
       for (let j = 0; j !== this.terminal.h; ++j) {
         let index = (i * this.FLOATS_PER_QUAD) + (j * this.terminal.w * this.FLOATS_PER_QUAD);
-        this.terminalTileVertices.set(this.cacheTileVertices(i, j), index);
-        this.centrePointCoordinates.set(this.cacheTileCentre(i, j), index);
+        this.terminalCellVertices.set(this.cacheCellVertices(i, j), index);
+        this.centrePointCoordinates.set(this.cacheCellCentre(i, j), index);
         this.textureVertices.set(this.characterCache.getCharacterVertices('?'), index);
         this.fgColorValues.set(new Float32Array([
           1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0
@@ -160,11 +160,11 @@ export class GLRenderer {
       }
     }
 
-    // Buffer all data that will not change over time (vertices that define the quads to draw each tile, and the vertex
-    // that defines each tile's central point).
-    this.bufferArray(this.glFgCtx, this.terminalTileVertices, this.fgVertexBuffer);
+    // Buffer all data that will not change over time (vertices that define the quads to draw each cell, and the vertex
+    // that defines each cell's central point).
+    this.bufferArray(this.glFgCtx, this.terminalCellVertices, this.fgVertexBuffer);
     this.bufferArray(this.glFgCtx, this.centrePointCoordinates, this.fgVertexCentreBuffer);
-    this.bufferArray(this.glBgCtx, this.terminalTileVertices, this.bgVertexBuffer);
+    this.bufferArray(this.glBgCtx, this.terminalCellVertices, this.bgVertexBuffer);
   }
 
   // Enables a vertex attribute array, binds a buffer, optionally binds a texture if drawing a textured quad, and... I
@@ -183,32 +183,32 @@ export class GLRenderer {
     glCtx.bufferData(glCtx.ARRAY_BUFFER, data, (arrayType ? arrayType : glCtx.STATIC_DRAW));
   }
 
-  private cacheTileVertices(x: number, y: number): Float32Array {
-    let worldSpaceX = x * this.terminal.tilePixelWidth;
-    let worldSpaceY = y * this.terminal.tilePixelHeight;
+  private cacheCellVertices(x: number, y: number): Float32Array {
+    let worldSpaceX = x * this.terminal.cellPixelWidth;
+    let worldSpaceY = y * this.terminal.cellPixelHeight;
 
     return new Float32Array([
       worldSpaceX, worldSpaceY,
-      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY,
-      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY + this.terminal.tilePixelHeight,
+      worldSpaceX + this.terminal.cellPixelWidth, worldSpaceY,
+      worldSpaceX + this.terminal.cellPixelWidth, worldSpaceY + this.terminal.cellPixelHeight,
       worldSpaceX, worldSpaceY,
-      worldSpaceX, worldSpaceY + this.terminal.tilePixelHeight,
-      worldSpaceX + this.terminal.tilePixelWidth, worldSpaceY + this.terminal.tilePixelHeight,
+      worldSpaceX, worldSpaceY + this.terminal.cellPixelHeight,
+      worldSpaceX + this.terminal.cellPixelWidth, worldSpaceY + this.terminal.cellPixelHeight,
     ]);
   }
 
-  private cacheTileCentre(x: number, y: number): Float32Array {
-    let worldSpaceX = x * this.terminal.tilePixelWidth;
-    let worldSpaceY = y * this.terminal.tilePixelHeight;
+  private cacheCellCentre(x: number, y: number): Float32Array {
+    let worldSpaceX = x * this.terminal.cellPixelWidth;
+    let worldSpaceY = y * this.terminal.cellPixelHeight;
 
     // There has to be a less stupid way than this
     return new Float32Array([
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2,
-      worldSpaceX + this.terminal.tilePixelWidth / 2, worldSpaceY + this.terminal.tilePixelHeight / 2
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2,
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2,
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2,
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2,
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2,
+      worldSpaceX + this.terminal.cellPixelWidth / 2, worldSpaceY + this.terminal.cellPixelHeight / 2
     ]);
   }
 
@@ -266,7 +266,7 @@ export class GLRenderer {
     this.enableVertexArray(this.glFgCtx, this.fgColorAttributeLocation, this.fgcBuffer, 4);
     this.enableVertexArray(this.glFgCtx, this.fgTextureAttributeLocation, this.fgTextureBuffer, 2, this.textureAtlas);
 
-    this.glFgCtx.drawArrays(this.glFgCtx.TRIANGLES, 0, this.terminalTileVertices.length / 2);
+    this.glFgCtx.drawArrays(this.glFgCtx.TRIANGLES, 0, this.terminalCellVertices.length / 2);
 
     // Buffer all background data that changes frame-by-frame and draw to the background canvas.
     this.bufferArray(this.glBgCtx, this.bgColorValues, this.bgcBuffer);
@@ -274,6 +274,6 @@ export class GLRenderer {
     this.enableVertexArray(this.glBgCtx, this.bgVertexAttributeLocation, this.bgVertexBuffer, 2);
     this.enableVertexArray(this.glBgCtx, this.bgColorAttributeLocation, this.bgcBuffer, 4);
 
-    this.glBgCtx.drawArrays(this.glBgCtx.TRIANGLES, 0, this.terminalTileVertices.length / 2);
+    this.glBgCtx.drawArrays(this.glBgCtx.TRIANGLES, 0, this.terminalCellVertices.length / 2);
   }
 }

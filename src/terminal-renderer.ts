@@ -8,11 +8,11 @@ export class TerminalRenderer {
   private glRenderer: GLRenderer;
   private glFgCnv: HTMLCanvasElement;
 
-  constructor(terminal: NRXTerm, el: HTMLElement, w: number, h: number, tilePixelWidth: number, tilePixelHeight: number) {
+  constructor(terminal: NRXTerm, el: HTMLElement, w: number, h: number, cellPixelWidth: number, cellPixelHeight: number) {
     this.terminal = terminal;
 
-    const canvasPixelWidth = w * tilePixelWidth;
-    const canvasPixelHeight = h * tilePixelHeight;
+    const canvasPixelWidth = w * cellPixelWidth;
+    const canvasPixelHeight = h * cellPixelHeight;
 
     el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
     el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
@@ -33,8 +33,8 @@ export class TerminalRenderer {
     this.characterCache = new CharacterCache(
       this.terminal.fontSize,
       this.terminal.fontFamily,
-      this.terminal.tilePixelWidth,
-      this.terminal.tilePixelHeight
+      this.terminal.cellPixelWidth,
+      this.terminal.cellPixelHeight
     );
 
     this.glRenderer = new GLRenderer(this.terminal, this.characterCache, glFgCtx, glBgCtx);
@@ -43,7 +43,7 @@ export class TerminalRenderer {
   public drawToCanvas(): void {
     for (let i = 0; i !== this.terminal.w; ++i) {
       for (let j = 0; j !== this.terminal.h; ++j) {
-        const t = this.terminal.tileAt(i, j);
+        const t = this.terminal.cell(i, j);
         this.glRenderer.setForegroundData(i, j, t.char, t.fgc.r / 255, t.fgc.g / 255, t.fgc.b / 255, t.rot);
         this.glRenderer.setBackgroundData(i, j, t.bgc.r / 255, t.bgc.g / 255, t.bgc.b / 255);
         t.setBga(0.0);

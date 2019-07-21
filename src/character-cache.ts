@@ -3,8 +3,8 @@ export class CharacterCache {
   private context: CanvasRenderingContext2D;
   private fontSize: number;
   private fontFamily: string;
-  private tileWidth: number;
-  private tileHeight: number;
+  private cellWidth: number;
+  private cellHeight: number;
   private quadMap: Map<string, Float32Array>;
 
   // The set of characters that nrx-terminal will pre-render on startup, hopefully covering most use cases.
@@ -18,13 +18,13 @@ export class CharacterCache {
   private characterIndex = 0;
   public textureNeedsUpdatingFlag = false;
 
-  constructor(fontSize: number, fontFamily: string, tileWidth: number, tileHeight: number) {
-    Object.assign(this, { fontSize, fontFamily, tileWidth, tileHeight });
+  constructor(fontSize: number, fontFamily: string, cellWidth: number, cellHeight: number) {
+    Object.assign(this, { fontSize, fontFamily, cellWidth, cellHeight });
 
     // Figure out what the smallest power-of-two canvas size is that can fit a 32x32 map of characters in it of the
     // specified width and height
     this.canvasSize = 2 ** 12;
-    const mininumTextureSize = (Math.max(tileWidth, tileHeight) + 2) * 32;
+    const mininumTextureSize = (Math.max(cellWidth, cellHeight) + 2) * 32;
     while (this.canvasSize / 2 > mininumTextureSize) {
       this.canvasSize = this.canvasSize / 2;
     }
@@ -89,8 +89,8 @@ export class CharacterCache {
   private createVertexArray(x: number, y: number): Float32Array {
     const clipX = (x * this.blockSizePx) / this.canvasSize;
     const clipY = 1 - ((y * this.blockSizePx) / this.canvasSize);
-    const w = this.tileWidth / this.canvasSize;
-    const h = this.tileHeight / this.canvasSize;
+    const w = this.cellWidth / this.canvasSize;
+    const h = this.cellHeight / this.canvasSize;
     let clips = [
       clipX, clipY,
       clipX + w, clipY,
