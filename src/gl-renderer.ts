@@ -152,7 +152,7 @@ export class GLRenderer {
           1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0
         ]), index * 2);
         this.bgColorValues.set(new Float32Array([
-          1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
+          0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1
         ]), index * 2);
         this.rotationValues.set(new Float32Array([
           0, 0, 0, 0, 0, 0
