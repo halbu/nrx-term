@@ -14,11 +14,11 @@ export class TerminalRenderer {
     const canvasPixelWidth = w * cellPixelWidth;
     const canvasPixelHeight = h * cellPixelHeight;
 
-    el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
-    el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
+    el.insertAdjacentHTML('beforeend', '<canvas id="glBgCtx" style="position: absolute; left: 0; top: 0; z-index: 998; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
+    el.insertAdjacentHTML('beforeend', '<canvas id="glFgCtx" style="position: absolute; left: 0; top: 0; z-index: 999; height: ' + canvasPixelHeight + '; width: ' + canvasPixelWidth + '; text-align: center;"></canvas>');
 
-    let glFgCnv = <HTMLCanvasElement> document.getElementById('glBgCtx');
-    let glBgCnv = <HTMLCanvasElement> document.getElementById('glFgCtx');
+    let glBgCnv = <HTMLCanvasElement> document.getElementById('glBgCtx');
+    let glFgCnv = <HTMLCanvasElement> document.getElementById('glFgCtx');
 
     [glFgCnv, glBgCnv].forEach(c => {
       c.width = canvasPixelWidth;
