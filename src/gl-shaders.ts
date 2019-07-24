@@ -11,8 +11,8 @@ export class GlShaders {
     'uniform float canvas_h;' +
     'varying vec2 vTex;' +
     'varying vec4 fCol;' +
+
     'void main(void) {' +
-    
     // Rotate this vertex about the centre point of its quad.
     '  float px = aVertex.x - cVertex.x;' +
     '  float py = aVertex.y - cVertex.y;' +
@@ -22,18 +22,19 @@ export class GlShaders {
     // Take the rotated vertex and convert its co-ordinates to clipspace [-1, 1].
     '  float nx = npx / canvas_w * 2.0 - 1.0;' +
     '  float ny = -(npy / canvas_h * 2.0 - 1.0);' +
-    
+
     // Pass everything along to the fragment shader.
     '  gl_Position = vec4(nx, ny, 0.0, 1.0);' +
     '  vTex = aUV;' +
     '  fCol = fragColor;' +
     '}';
 
-    public static  fragmentShaderFgSrc =
+  public static fragmentShaderFgSrc =
     'precision highp float;' +
     'varying vec2 vTex;' +
     'varying vec4 fCol;' +
     'uniform sampler2D sampler0;' +
+
     'void main(void){' +
 
     // Test the alpha of the texel to see if this pixel is part of a glyph.
@@ -46,14 +47,14 @@ export class GlShaders {
     '  }' +
     '}';
 
-    public static  vertexShaderBgSrc =
+  public static vertexShaderBgSrc =
     'attribute vec2 aVertex;' +
     'attribute vec4 fragColor;' +
     'varying vec4 fCol;' +
     'uniform float canvas_w;' +
     'uniform float canvas_h;' +
-    'void main(void) {' +
 
+    'void main(void) {' +
     // Convert this worldspace vertex's co-ordinates to clipspace [-1, 1].
     '  float nx = aVertex.x / canvas_w * 2.0 - 1.0;' +
     '  float ny = -(aVertex.y / canvas_h * 2.0 - 1.0);' +
@@ -63,9 +64,10 @@ export class GlShaders {
     '  fCol = fragColor;' +
     '}';
 
-    public static  fragmentShaderBgSrc =
+  public static fragmentShaderBgSrc =
     'precision mediump float;' +
     'varying vec4 fCol;' +
+
     'void main(void) {' +
     '  gl_FragColor = fCol;' +
     '}';
