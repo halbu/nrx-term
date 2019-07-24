@@ -5,7 +5,7 @@
   "main": "lib/terminal.js",
   "typings": "lib/terminal.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -r ts-node/register test/**/*.test.ts",
     "build": "tsc",
     "lint": "tslint -p tsconfig.json"
   },
@@ -21,8 +21,14 @@
   },
   "homepage": "https://github.com/halbu/nrx-term#readme",
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1",
+    "ts-node": "^8.3.0",
     "tslint": "^5.17.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.5.3"
   },
   "files": [
     "lib/**/*"
