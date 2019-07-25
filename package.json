@@ -5,9 +5,10 @@
   "main": "lib/terminal.js",
   "typings": "lib/terminal.d.ts",
   "scripts": {
-    "test": "mocha -r ts-node/register test/**/*.test.ts",
+    "setup": "npm install",
     "build": "tsc",
-    "lint": "tslint -p tsconfig.json"
+    "test": "mocha -r ts-node/register test/**/*.test.ts",
+    "lint": "tslint -p ./tsconfig.json -c ./tslint.json"
   },
   "repository": {
     "type": "git",
@@ -27,7 +28,7 @@
     "mocha": "^6.2.0",
     "nyc": "^14.1.1",
     "ts-node": "^8.3.0",
-    "tslint": "^5.17.0",
+    "tslint": "^5.18.0",
     "typescript": "^3.5.3"
   },
   "files": [

@@ -37,17 +37,13 @@
     ],
     "no-construct": true,
     "no-debugger": false,
-    "no-duplicate-key": true,
     "no-duplicate-variable": true,
     "no-empty": false,
     "no-eval": true,
     "no-shadowed-variable": true,
     "no-string-literal": false,
     "no-switch-case-fall-through": true,
-    "no-implicit-returns": true,
     "no-unused-expression": true,
-    "no-unused-variable": true,
-    "no-use-before-declare": true,
     "no-var-keyword": true,
     "radix": true,
     "switch-default": true,
@@ -58,8 +54,6 @@
       "spaces"
     ],
     "no-require-imports": false,
-    "sort-object-literal-keys": true,
-    "no-trailing-comma": true,
     "align": [
       true
     ],
