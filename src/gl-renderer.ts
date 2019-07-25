@@ -73,7 +73,7 @@ export class GLRenderer {
   }
 
   private readTextureFromCharacterCacheCanvas(): void {
-    this.textureAtlas = <WebGLTexture>this.glFgCtx.createTexture();
+    this.textureAtlas = <WebGLTexture> this.glFgCtx.createTexture();
     this.glFgCtx.bindTexture(this.glFgCtx.TEXTURE_2D, this.textureAtlas);
     this.glFgCtx.pixelStorei(this.glFgCtx.UNPACK_FLIP_Y_WEBGL, 1);
     this.glFgCtx.texParameteri(this.glFgCtx.TEXTURE_2D, this.glFgCtx.TEXTURE_MIN_FILTER, this.glFgCtx.LINEAR);
@@ -106,7 +106,7 @@ export class GLRenderer {
   private setupShaders(): void {
     // Set up foreground-layer shaders and program
 
-    this.fgProgram = <WebGLProgram>this.glFgCtx.createProgram();
+    this.fgProgram = <WebGLProgram> this.glFgCtx.createProgram();
     this.setupProgram(this.glFgCtx, GlShaders.vertexShaderFgSrc, GlShaders.fragmentShaderFgSrc, this.fgProgram);
 
     this.readTextureFromCharacterCacheCanvas();
@@ -119,7 +119,7 @@ export class GLRenderer {
 
     // Set up background-layer shaders and program
 
-    this.bgProgram = <WebGLProgram>this.glBgCtx.createProgram();
+    this.bgProgram = <WebGLProgram> this.glBgCtx.createProgram();
     this.setupProgram(this.glBgCtx, GlShaders.vertexShaderBgSrc, GlShaders.fragmentShaderBgSrc, this.bgProgram);
 
     // Get all attribute locations
