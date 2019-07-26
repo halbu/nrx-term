@@ -1,12 +1,12 @@
 # nrx-term
 
-### About
+[![Build Status](https://travis-ci.com/halbu/nrx-term.svg?branch=master)](https://travis-ci.com/halbu/nrx-term)
 
 `nrx-term` is a hardware-accelerated, browser-based terminal emulator for game development.
 
 <img src="https://raw.githubusercontent.com/halbu/nrx-term/master/img/nrx1.gif" width="45%"></img> <img src="https://raw.githubusercontent.com/halbu/nrx-term/master/img/nrx2.gif" width="45%"></img> 
 
-### Motivation and goals
+## Motivation and goals
 
 `nrx-term` is intended to assist in developing graphically rich roguelike games.
 
@@ -19,15 +19,11 @@ To this end, `nrx-term` offers:
 
 `nrx-term` is purely for terminal display and input handling, and is not opinionated about how you build your game.
 
-### Build status
-
-[![Build Status](https://travis-ci.com/halbu/nrx-term.svg?branch=master)](https://travis-ci.com/halbu/nrx-term)
-
-### How to use
+## How to use
 
 `nrx-term` is available via `npm`. Install from the command line with `npm i nrx-term`. Import it for use in your project with `import { NRXTerm } from 'nrx-term';`.
 
-### Todo
+## Todo
 
 - [ ] Better documentation 
 - [ ] Revisit user-facing API
